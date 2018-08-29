@@ -17,9 +17,11 @@ JNI开发流程相对比较固定,一般需要经过以下几步:
 
 这里简单的写一个例子来演示上述流程.
 
+
 # JNI开发流程
 
 ## 定义Native方法
+
 
 为了说明流程,我们直接在根目录中创建Hello.java:
 
@@ -46,7 +48,9 @@ public class Hello {
 
   不要弄错,否则会导致UnsatisfiedLinkError.
 
+
 ## javah生成.h头文件
+
 
 Java中提供javah命令用于生成.h头文件.这里我们执行`javah Hello`命令即可生成对应的Hello.h.
 
@@ -73,13 +77,15 @@ JNIEXPORT void JNICALL Java_Hello_say (JNIEnv *, jobject);
 #endif
 ```
 
-**.h头文件名**遵循格式:'Package_ClassName',由于此处我们未创建包结构,因此Hello.java生成的.h文件名中省略了Package部分,即`Hello.h`
+**.h头文件名**遵循格式:`Package_ClassName`,由于此处我们未创建包结构,因此Hello.java生成的.h文件名中省略了Package部分,即`Hello.h`
 
 **.h头文件方法名**遵循格式`Java_{Package_ClassName}_{FunctionName}(JNI arguments)`比如`JNIEXPORT void JNICALL Java_Hello_say (JNIEnv *, jobject)`,
 
 **jni.h**是jdk中C语言库的头文件，在编译.c的时候需要指定jni.h的所在位置,否则会编译失败,在macOS中,其所在位置:`System/Library/Frameworks/JavaVM.framework/Headers`.
 
+
 ## 编写C/C++文件
+
 
 有了.h头文件后,就可以为真正编写对应实现,这里创建了Hello.cpp,在方法输出Hello world.
 
@@ -95,7 +101,9 @@ JNIEXPORT void JNICALL Java_Hello_say
 
 ```
 
+
 ## 生成链接库
+
 
 完成C/C++文件编写以后,通过以下命令将Hello.cpp编译成动态链接库.
 
@@ -117,6 +125,7 @@ Hello world!
 
 这里为了省事,我直接用g++来编译.
 
+
 # JNI注意事项
 
 在JNI开发过程中我们经常会遇到类问题:一是.h文件创建失败,另一类是调用过程,经常会遇到UnsatisfiedLinkError,
@@ -131,7 +140,9 @@ Hello world!
 
 ![image-20180829133317779](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-29-053318.png)
 
+
 ## UnsatisfiedLinkError
+
 
 该错误一般由于链接库路径不对或者链接库自身问题导致.
 
@@ -155,7 +166,9 @@ Exception in thread "main" java.lang.UnsatisfiedLinkError: no hi in java.library
 	at Hello.main(Hello.java:5)
 ```
 
+
 # RegisterNatives解耦Native方法
+
 
 回过头来看上述Native的方法名:
 
@@ -171,7 +184,9 @@ JNIEXPORT void JNICALL Java_com_lionoggo_ireader_Hello_say (JNIEnv *, jobject);
 
 除此之外,每个方法都要带固定的`JNIEXPORT void JNICALL`,这就导致无法将Native方法名修改为更简洁的方式.JNI中提供了`RegisterNatives()`为Java中的Native方法动态绑定某个具体Native的实现方法.
 
+
 ## JNI_OnLoad
+
 
 在java中调用`System.loadLibrary()`时会导致Native层`JNI_ONLoad(JavaVm *vm,void *reserved)`方法被调用,这时就可以结合刚才提到的`RegisterNatives`来为Java中Native方法绑定具体的实现.
 
@@ -180,7 +195,9 @@ JNIEXPORT void JNICALL Java_com_lionoggo_ireader_Hello_say (JNIEnv *, jobject);
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved);
 ```
 
+
 ## RegisterNatives
+
 
 ```c
 jint RegisterNatives(jclass clazz, const JNINativeMethod* methods,
@@ -194,6 +211,7 @@ jint RegisterNatives(jclass clazz, const JNINativeMethod* methods,
 - nMethods: 用来注册的Native方法数目
 
 ## JNINativeMethod
+
 
 JNINativeMethod是jni.h中定义的结构体,用来描述Native方法,macOS中可以在路径`System/Library/Frameworks/JavaVM.framework/Headers/jni.h`找到:
 
@@ -210,7 +228,9 @@ typedef struct {
 } JNINativeMethod;
 ```
 
+
 ## 具体实现
+
 
 有了JNI_OnLoad和RegisterNatives后,我们就可以来实现Native方法的动态注册了,这里仍然之前的Hello.java作为演示,其过程相对固定,主要分为三步:
 
@@ -308,6 +328,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 将其打包成本地链接库libhi.jnilib,然后像之前一样执行Hello.java即可.
 
 # 参考
+
 
 [Java Native Interface](https://www3.ntu.edu.sg/home/ehchua/programming/java/JavaNativeInterface.html)
 
