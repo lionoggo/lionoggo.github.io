@@ -44,7 +44,7 @@ public class Hello {
 
 - macOS以.jnilib结尾
 
-- linux中以.os结尾
+- linux中以.so结尾
 
   不要弄错,否则会导致UnsatisfiedLinkError.
 
