@@ -185,16 +185,17 @@ JNIEXPORT void JNICALL Java_com_lionoggo_ireader_Hello_say (JNIEnv *, jobject);
 除此之外,每个方法都要带固定的`JNIEXPORT void JNICALL`,这就导致无法将Native方法名修改为更简洁的方式.JNI中提供了`RegisterNatives()`为Java中的Native方法动态绑定某个具体Native的实现方法.
 
 
-## JNI_OnLoad
+## JNI_OnLoad/JNI_OnUnload
 
-
-在java中调用`System.loadLibrary()`时会导致Native层`JNI_ONLoad(JavaVm *vm,void *reserved)`方法被调用,这时就可以结合刚才提到的`RegisterNatives`来为Java中Native方法绑定具体的实现.
+JNI组件被成功加载和卸载时,回回调响应的函数.当JVM执行执行`System.loadLibrary()`时会调用JNI组件的`JNI_ONLoad(JavaVm *vm,void *reserved)`,当VM释放JNI组件时会调用`JNI_OnUnload()`.
 
 ```c
 /* Defined by native libraries. */
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved);
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved);
 ```
 
+要在JNI组件被加载时动态绑定Native方法,那么`JNI_OnLoad()`就是个非常好的时机,这里结合刚才提到的`RegisterNatives`来为Java中Native方法绑定具体的实现.
 
 ## RegisterNatives
 
