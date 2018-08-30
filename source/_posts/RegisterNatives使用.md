@@ -327,6 +327,20 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 
 将其打包成本地链接库libhi.jnilib,然后像之前一样执行Hello.java即可.
 
+
+
+## 总结
+
+RegisterNatives除了能解决原来JNI中方法遵循特定方法命名规则外,还具备以下两个优点:
+
+- VM查找Native效率的提高
+
+  在调用Native方法时,VM需要多次在本地链接库中进行查找,多次调用就会产生多次查找.而通过RegisterNatives注册后,VM的查找次数会减少.
+
+- 在执行期间进行Native方法的替换.
+
+  在methods通过函数指针来绑定方法,这意味着我们可以在运行期间多次调用RegisterNatives来实现Native方法的替换.
+
 # 参考
 
 
