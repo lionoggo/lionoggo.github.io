@@ -91,8 +91,7 @@ OpenJDK源码结构如下:
 | jdk      | 包含Java工具包                          |
 | langtool | 语言工具的源代码如javac,javap等         |
 | nashorn  | JavaScript引擎实现                      |
-|          |                                         |
-|          |                                         |
+
 
 ## hotspot
 
