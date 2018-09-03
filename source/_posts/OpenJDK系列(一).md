@@ -1,10 +1,9 @@
-title: OpenJDK系列(一):编译与项目结构
+title: OpenJDK系列(一):编译,调试与项目结构
 date: 2018/6/20 13:20:50
 toc  : true
 tags: [OpenJDK,HotSpot]
 categories: technology
 description: 正如每个Android工程师离不开AOSP项目一样,每个从事Java领域的工程师,最后都免不了去了解下OpenJDK.
-
 
 ----
 
@@ -73,6 +72,78 @@ cd OpenJDK10/build/macosx-x86_64-normal-serverANDclient-slowdebug/jdk/bin
 ```
 
 ![image-20180903161734147](https://i.imgur.com/2SvqV9F.png)
+
+# OpenJDK调试
+
+对于OpenJDK调试而言,常用的工具有gdb和lldb,在MacOS使用更多的是lldb.直接使用lldb进行调试,相对比较原始,对于比较复杂的项目还可以借助Xcode或者CLion.
+
+## Xcode调试OpenJDK
+
+以Xcode 9为例.
+
+### 工程创建
+
+首先使用Xcode创建一个新的项目OpenSDK10,为Command Line Tool类型.
+
+![step1](https://ws3.sinaimg.cn/large/006tNbRwly1fuwqqejp5vj31fu10i7py.jpg)
+
+点击Next继续配置其他信息.
+
+![step2](https://ws1.sinaimg.cn/large/006tNbRwly1fuwqrgvl3uj31bk0zewvt.jpg)
+
+创建完成后,先删除默认生成的文件.
+
+![step3](https://ws2.sinaimg.cn/large/006tNbRwly1fuwqt12oqcj310m0kq7h1.jpg)
+
+### 源码导入
+
+ 右键OpenJDK10,选则Add Files To "OpenJDK10",将之前用于OpenJDK10的源码根目录下的文件都添加进来.
+
+![step4](https://ws3.sinaimg.cn/large/006tNbRwly1fuwqxq6eqij30u60r0kb4.jpg)
+
+
+
+![step5](https://ws1.sinaimg.cn/large/006tNbRwly1fuwqwpjaphj310a0pa4gn.jpg)
+
+现在我们来配置下项目.选择Product -> Scheme -> Edit Scheme.在左侧的Run选项中先配置info标签页中的Executable,此处指定为之前我们已经编译好的java命令,按照我们之前的编译配置,此处路径即为:
+
+`/OpenJDK10/build/macosx-x86_64-normal-serverANDclient-slowdebug/jdk/bin/java`
+
+![step9](https://ws3.sinaimg.cn/large/006tNbRwly1fuwrbklw8ej316m0mm7a8.jpg)
+
+接下来继续配置Arguments标签页中的Arguments Passed On Launch.随便写的一个Hello.java文件,如下内容:
+
+```java
+public class Hello{
+    public static void main(String[] args){
+          System.out.println("Hello World !");
+    }
+}
+```
+
+然后将其放在java命令所在的目录,即上述提到的`/OpenJDK10/build/macosx-x86_64-normal-serverANDclient-slowdebug/jdk/bin`中,在该目录下执行'./javac Hello.java'将其编译成class文件.
+
+![step8](https://ws1.sinaimg.cn/large/006tNbRwly1fuwr5ainy5j31he0wa7id.jpg)
+
+### 开始调试
+
+到现在,所有的准备工作已经做好了,可以进行调试了.在main.c的`main()`打几个断点后开始调试.
+
+![step10](https://ws3.sinaimg.cn/large/006tNbRwly1fuwrnvz4f4j31h6118kip.jpg)
+
+到现在已经可以正常调试了,但继续调试可能会遇到signal SIGSEGV错误
+
+![step11](https://ws1.sinaimg.cn/large/006tNbRwly1fuwrpwggqoj31ha0ysh9v.jpg)
+
+此时只需要在lldb中设置`(lldb) process handle SIGSEGV --stop=false`,然后继续调试即可.
+
+![step12](https://ws4.sinaimg.cn/large/006tNbRwly1fuwrwggk0bj31380w6aeh.jpg)
+
+不出意外,最终我们会在lldb控制台看到输出结果"**Hello World !** ",如下:
+
+![step12](https://ws1.sinaimg.cn/large/006tNbRwly1fuwrzyztmdj311y0qyae8.jpg)
+
+至此关于Xcode下调试OpenJDK源码的流程已经完成.
 
 # 源码目录结构
 
