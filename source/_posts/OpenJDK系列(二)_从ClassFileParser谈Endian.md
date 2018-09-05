@@ -22,11 +22,11 @@ Endian即所谓的字节序,通俗点说就是多于一个类型的数据在内�
 
 也就是说一个内存单元可以存放C语言中一个char类型数据,如果是short类型,则需要占用2个内存单元,而int类型则需要占据4个内存单元,比如int类型的305419896,其十六进制为0x12345678,需要占据4个内存单元,那这个4个内存单元中到底该如何存放数据呢?此时就用到了刚才的Endian.
 
-如果按照Little-Endian方式,其内存布局如下:
+如果按照Big-Endian方式,其内存布局如下:
 
 ![image-20180905105723144](https://i.imgur.com/yU8oxKu.png)
 
-如果按照Big-Endian方法,其内存布局如下:
+如果按照Little-Endian方法,其内存布局如下:
 
 ![image-20180905105758961](https://i.imgur.com/Z66SXoD.png)
 
@@ -77,22 +77,22 @@ class ClassFileStream: public ResourceObj {
                   const char* source,
                   bool verify_stream = verify);
     
-   	 u2 get_u2_fast() const {
+    u2 get_u2_fast() const {
     	u2 res = Bytes::get_Java_u2((address)_current);
     	_current += 2;
     	return res;
- 	}   
+    }   
     
-  	u4 get_u4_fast() const {
-     u4 res = Bytes::get_Java_u4((address)_current);
-     _current += 4;
-     return res;
- 	}
+   u4 get_u4_fast() const {
+      u4 res = Bytes::get_Java_u4((address)_current);
+      _current += 4;
+      return res;
+   }
     
    u8 get_u8_fast() const {
-    u8 res = Bytes::get_Java_u8((address)_current);
-    _current += 8;
-    return res;
+      u8 res = Bytes::get_Java_u8((address)_current);
+      _current += 8;
+      return res;
    }
    ......
 }
@@ -141,7 +141,9 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   }
 ```
 
-在该方法中,从字节流中读取4个字节的操作由`Bytes::get_Java_u4((address)_current)`实现.其中**Bytes**是与CPU架构相关的类.我这边CPU采用的是x86架构,因此调用的是/OpenJDK10/hotspot/src/cpu/x86/vm/bytes_x86.hpp`中Bytes类:
+在该方法中,从字节流中读取4个字节的操作由`Bytes::get_Java_u4((address)_current)`实现.其中**Bytes**是与CPU架构相关的类.我这边CPU采用的是x86架构,因此调用的是:
+
+`/OpenJDK10/hotspot/src/cpu/x86/vm/bytes_x86.hpp`
 
 ```c++
 class Bytes: AllStatic {
