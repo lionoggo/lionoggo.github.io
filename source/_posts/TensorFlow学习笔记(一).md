@@ -22,7 +22,7 @@ description: 最近致力于深度学习,希望在移动领域能够找出更多
 
 现在来说说在神经网络算法中,每个神经元的作用:每个神经元都会给其输入指定一个权重：相对于执行的任务该神经元的正确和错误程度。最终的输出由这些权重共同决定。
 
-![](http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-WX20180708-110147%402x.png)
+![](https://i.imgur.com/v5aciFo.png)
 
 现在来看看上面提到的停止标志示例。一张停止标志图像的属性，被一一细分，然后被神经元“检查”：形状、颜色、字符、标志大小和是否运动。神经网络的任务是判断这是否是一个停止标志。它将给出一个“概率向量”，这其实是基于权重做出的猜测结果。
 
@@ -46,7 +46,7 @@ description: 最近致力于深度学习,希望在移动领域能够找出更多
 
 到现在,你应该对TensorFlow有了一个浅显的人是,下面我们再来看一张图,他会帮助你更好的认识TensorFlow工作过程.
 
-![](http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-tensor.gif)
+![](https://i.imgur.com/toP2XbB.gif)
 
 到现在,我们只是认识了TensorFlow,接下来我总结了TensorFlowd的四个特性,来说明我们为什么要使用TensorFlow:
 
@@ -61,7 +61,7 @@ description: 最近致力于深度学习,希望在移动领域能够找出更多
 
 如果你是一名城市管道设计者,当你想要解决这个城市排水问题时,你会做点什么呢?(这个例子来自早期看到一位作者的解释)
 
-![](http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-WX20180708-110525%402x.png)
+![](https://i.imgur.com/SJqc8BN.png)
 
 不出意外,你的脑海中隐约的浮现出管道图.如果能到这一步,说明什么呢?这意味着你已经开始触及TensorFlow领域,看吧,其实TensorFlow的工作过程我们天生就懂.
 
@@ -619,7 +619,7 @@ Build timestamp as int: 1489671474
 
 接下来,我们需要修改TensorFlow项目的WORKSPACE文件:
 
-![](http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-WX20180708-110638%402x.png)
+![](https://i.imgur.com/X4v1ner.png)
 
 
 
@@ -702,7 +702,7 @@ bazel-bin/tensorflow/contrib/android/libandroid_tensorflow_inference_java.jar
 
 2. 添加jar包到项目的libs目录下,添加so文件到jniLibs目录下:
 
-![](http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-WX20180708-110758%402x.png)
+![](https://i.imgur.com/T7zFHS2.png)
 
 3. 定义变量,然后初始化tensorflow,调用相关api.同样,我们以刚才生成的tensorflow_matrix_graph.pb为例:
 

@@ -115,7 +115,7 @@ g++ -fPIC -shared -o libhi.jnilib Hello.cpp -I/System/Library/Frameworks/JavaVM.
 - -o : 该选项后需要指定动态链接库名字,需要保证其后缀名和运行平台对应,比如linux下是.so,mac下是.jnilib
 - -I : 该选项后需要指定jni.h文件所在的路径
 
-![image-20180829122221898](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-29-042222.png)
+![image-20180829122221898](https://i.imgur.com/eYe0HzY.png)
 
 接下来通过命令:`java Hello`运行主程序:
 
@@ -134,11 +134,11 @@ Hello world!
 
 在有些情况,通过javah创建.h文件时,可能会遇到错误:`Error: Could not find class file for 'XXX'`.产生该问题的原因一般由于javah中路径指定有问题.在上述例子中由于我们Hello.java不存在包结构,因此在根目录下执行'javah Hello'会正常生成.h文件.但如果项目结构如下所示:
 
-![image-20180829133113486](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-29-053113.png)
+![image-20180829133113486](https://i.imgur.com/LuHDXns.png)
 
 此时需要先进入src目录下,然后在该目录下执行如下命令:`javah -d jni com.lionoggo.Hello`即可,此处`-d`参数用来指定头文件存放路径.
 
-![image-20180829133317779](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-29-053318.png)
+![image-20180829133317779](https://i.imgur.com/2mYpnI1.png)
 
 
 ## UnsatisfiedLinkError
@@ -150,7 +150,7 @@ Hello world!
 
    如果链接库和主程序不在同一目录内,在执行时需要指定链接库路径,如下目录结构:
 
-   ![image-20180829142537772](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-29-062538.png)
+   ![image-20180829142537772](https://i.imgur.com/KFscKtJ.png)
 
 此时在执行主程序时需要指定路径:`java -Djava.library.path=./lib Hello`
 
