@@ -16,7 +16,7 @@ AsyncTask是Android系统提供的轻量级异步任务类.在Android 1.6之前,
 AysncTask是个抽象的泛型类,它提供了Params,Progress和Result三个泛型参数分别用来表示输入参数类型,后台任务执行进度类型以及任务的输出结果类型,如不需要可以将参数类型指定为Void.此外AsyncTask提供以下四个方法用于通知调用者任务状态:
 
 - `onPreExecute()`:通知后台任务开始,工作在主线程.
-- `doInBackground(Params...params)`:在后台线程池中执行任务.在该方法中可以通过`publishProgress(Progress...values)`来更新任务进度,它最终会导致onProgressUpdate()的调用.
+- `doInBackground(Params...params)`:在后台线程池中执行任务.在该方法中可以通过`publishProgress()`来更新任务进度,它最终会导致onProgressUpdate()的调用.
 - `onProgressUpdate(Progress...values)`:后台任务进度改变时被执行(即`publishProgress()`调用后),工作在主线程
 - `onPostExecute(Result result)`:任务的执行结果通过该方法通知调用者,result是后台任务的返回结果,即`doInBackground()`的返回值.同样,该方法工作在主线程
 
