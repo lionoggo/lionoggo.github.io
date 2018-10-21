@@ -212,9 +212,9 @@ struct files_struct {
   struct fdtable __rcu  *fdt;   				// 指向其他fd表的指针
   struct fdtable        fdtab;  				// 基fd表
   spinlock_t file_lock ____cacheline_aligned_in_smp;
-  int next_fd;        							// 已分配的文件描述符加1,表示缓存下一个可用的fd*/
-  unsigned long      close_on_exec_init[1];     // 执行exec()时关闭的文件描述符链表 */
-  unsigned long      open_fds_init[1];          // 文件描述符的初值集合 */
+  int next_fd;        							// 已分配的文件描述符加1,表示缓存下一个可用的fd
+  unsigned long      close_on_exec_init[1];     // 执行exec()时关闭的文件描述符链表
+  unsigned long      open_fds_init[1];          // 文件描述符的初值集合
   unsigned long      full_fds_bits_init[1];      
   struct file __rcu  *fd_array[NR_OPEN_DEFAULT];// 文件对象指针的初始化数组
 };
