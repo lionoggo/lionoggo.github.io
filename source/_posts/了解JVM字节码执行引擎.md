@@ -27,7 +27,7 @@ description: 我们都知道，在当前的Java中（1.0）之后，编译器讲
 
 执行引擎运行的所有字节码指令只针对当前栈帧进行操作。需要注意的是一个栈中能容纳的栈帧是受限，过深的方法调用可能会导致StackOverFlowError，当然，我们可以认为设置栈的大小。其模型示意图大体如下：
 
-![image-20180815144510852](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064511.png)
+![image-20180815144510852](https://ws2.sinaimg.cn/large/006tNbRwly1fxekc64aj8j30mo0h0mxz.jpg)
 
 
 
@@ -61,10 +61,10 @@ public static void call2(int i,int j){
 
 为了方便起见，假设以上两段代码在同一个类中。这时call()所对应的栈帧中的局部变量表大体如下：
 
-![image-20180815144627847](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064628.png)
+![image-20180815144627847](https://ws3.sinaimg.cn/large/006tNbRwly1fxekc71hsdj306203ht8k.jpg)
 
 而call2()所对应的栈帧的局部变量表大体如下：
-![image-20180815144659903](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064700.png)
+![image-20180815144659903](https://ws3.sinaimg.cn/large/006tNbRwly1fxekkcrwaej3068034glg.jpg)
 
 
 
@@ -133,7 +133,7 @@ public static void call2(int i,int j){
 
 在jdk 1.0时代，Java虚拟机完全是解释执行的，随着技术的发展，现在主流的虚拟机中大都包含了即时编译器(JIT)。因此，虚拟机在执行代码过程中，到底是解释执行还是编译执行，只有它自己才能准确判断了，但是无论什么虚拟机，其原理基本符合现代经典的编译原理，如下图所示：
 
-![image-20180815144728322](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064728.png)
+![image-20180815144728322](https://ws4.sinaimg.cn/large/006tNbRwly1fxekc80iwwj30d10ie3z3.jpg)
 
 在Java中，javac编译器完成了词法分析、语法分析以及抽象语法树的过程，最终遍历语法树生成线性字节码指令流的过程，此过程发生在虚拟机外部。
 
@@ -240,37 +240,37 @@ public class MainTest {
 
 执行过程中代码、操作数栈和局部变量表的变化情况如下：
 
-![image-20180815144855571](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064855.png)
+![image-20180815144855571](https://ws1.sinaimg.cn/large/006tNbRwly1fxekc8y6rsj30ir0b6gm9.jpg)
 
-![image-20180815144922377](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064922.png)
+![image-20180815144922377](https://ws2.sinaimg.cn/large/006tNbRwly1fxekc9z7vdj30im0a7750.jpg)
 
-![image-20180815144947715](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-064948.png)
+![image-20180815144947715](https://ws3.sinaimg.cn/large/006tNbRwly1fxekcavgr9j30im0a90te.jpg)
 
-![image-20180815145016645](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065016.png)
+![image-20180815145016645](https://ws3.sinaimg.cn/large/006tNbRwly1fxekcbu7uoj30im0afaat.jpg)
 
-![image-20180815145054788](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065054.png)
+![image-20180815145054788](https://ws3.sinaimg.cn/large/006tNbRwly1fxekccoh1lj30im09kt9e.jpg)
 
-![image-20180815145116824](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065117.png)
+![image-20180815145116824](https://ws4.sinaimg.cn/large/006tNbRwly1fxekce4h9qj30im0abt9h.jpg)
 
-![image-20180815145148167](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065148.png)
+![image-20180815145148167](https://ws4.sinaimg.cn/large/006tNbRwly1fxekcfgfqcj30in0a8gmb.jpg)
 
-![image-20180815145234272](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065234.png)
+![image-20180815145234272](https://ws4.sinaimg.cn/large/006tNbRwly1fxekcg3vhkj30il09twf9.jpg)
 
-![image-20180815145309935](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065310.png)
+![image-20180815145309935](https://ws1.sinaimg.cn/large/006tNbRwly1fxekche4wzj30im09zjs3.jpg)
 
-![image-20180815145332856](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065333.png)
+![image-20180815145332856](https://ws2.sinaimg.cn/large/006tNbRwly1fxekciec41j30im09vwf9.jpg)
 
-![image-20180815145355355](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065355.png)
+![image-20180815145355355](https://ws2.sinaimg.cn/large/006tNbRwly1fxekcjego7j30ij09igmd.jpg)
 
-![image-20180815145420538](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065420.png)
+![image-20180815145420538](https://ws4.sinaimg.cn/large/006tNbRwly1fxekgtoz9hj30im09h0tg.jpg)
 
-![image-20180815145546202](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065546.png)
+![image-20180815145546202](https://ws2.sinaimg.cn/large/006tNbRwly1fxekguoejvj30im09nq3p.jpg)
 
-![image-20180815145610281](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065610.png)
+![image-20180815145610281](https://ws3.sinaimg.cn/large/006tNbRwly1fxekcn04nkj30in09w0tg.jpg)
 
-![image-20180815145645730](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065646.png)
+![image-20180815145645730](https://ws3.sinaimg.cn/large/006tNbRwly1fxekcnzf9cj30im09tjs5.jpg)
 
-![image-20180815145711517](http://pbj0kpudr.bkt.clouddn.com/blog/2018-08-15-065711.png)
+![image-20180815145711517](https://ws1.sinaimg.cn/large/006tNbRwly1fxekcqpt2cj30il09ndgk.jpg)
 
 
 
