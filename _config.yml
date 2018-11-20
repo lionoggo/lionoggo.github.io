@@ -4,8 +4,8 @@
 
 # Site
 title: 浮游
-subtitle:  
-description:
+subtitle: lionoggo.com
+description: 猫的故事里有我
 keywords:
 author: lionoggo 
 language: zh-CN 
@@ -74,6 +74,24 @@ pagination_dir: page
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
 theme: next 
+
+live2d:
+  enable: true
+  scriptFrom: local
+  pluginRootPath: live2dw/
+  pluginJsPath: lib/
+  pluginModelPath: assets/
+  tagMode: false
+  log: false
+  model:
+      use: live2d-widget-model-tororo
+  display:
+    position: right
+    width: 75 
+    height: 150
+  mobile:
+    show: true
+
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
