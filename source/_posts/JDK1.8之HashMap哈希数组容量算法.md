@@ -19,7 +19,9 @@ HashMap在初始化时允许我们指定负载因子和哈希数组初始化容�
     }
 ```
 
-默认情况下负载因子loadFactory为0.75f初始化容量initialCapacity为16.其中HashMap要求哈希数组的大小必须2<sup>n</sup>,如果我们在初始时指定initialCapacity为7会是如何?其处理逻辑在`tableSizeFor()`中,该方法用于返回大于输入参数且离它最近的2的整数次幂的数.比如对于参数7,那么最终哈希数组的大小为2<sup>3</sup>,也就是8.
+默认情况下负载因子loadFactory为0.75f初始化容量initialCapacity为16.
+
+其中HashMap要求哈希数组的大小必须2<sup>n</sup>,如果我们在初始时指定initialCapacity为7会是如何?其处理逻辑在`tableSizeFor()`中,该方法用于返回大于输入参数且离它最近的2的整数次幂的数.比如对于参数7,那么最终哈希数组的大小为2<sup>3</sup>,也就是8.
 
 # 哈希数组容量计算
 
