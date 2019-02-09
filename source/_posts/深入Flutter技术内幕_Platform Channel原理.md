@@ -1,4 +1,4 @@
-title: 深入Flutter技术内幕:Platform Channel设计与实现
+title: 深入Flutter技术内幕:Platform Channel设计与实现(一)
 date: 2019/2/9 21:20:50
 toc  : true
 tags: [Flutter,Platform Channel,Dart,Android]
@@ -6,6 +6,8 @@ categories: technology
 description: 深入分析Flutter跨平台通信机制,掌握MethodChannel工作基本流程.
 
 -----
+
+Flutter作为一个灵活的UI框架,引入Platform Channel机制来支持不同平台的API调用,无论是Android上的由Java或Kotlin开发的API,还是IOS上用Objective或Swift开发API.需要注意的是Platform Channel不依赖代码生成,而是建立在消息传递方式上.实际上,它的工作模式和原理非常类似基于二进制协议开发的网络服务,在下文中,我们会对此有更深的理解与体会.
 
 # Platform Channel简介
 
