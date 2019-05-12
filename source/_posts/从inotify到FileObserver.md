@@ -349,7 +349,7 @@ static void android_os_fileobserver_stopWatching(JNIEnv* env, jobject object, ji
 
 到现在为止我们已经弄明白了FileObserver的实现原理,为了方便理解,我们用一张简单的图来描述整个过程:
 
-![notify](https://ws1.sinaimg.cn/large/006tNbRwly1fxekgsp4q5j30x80j2783.jpg)
+![notify](https://i.imgur.com/sdTuQlt.jpg)
 
 
 

@@ -69,7 +69,7 @@ Android项目实践
 ### 简单开发模型
 所谓的简单开发模型是最基础的开发方式,工程中没有所谓的模块,没有所谓的规划,常见于初学者学习阶段或者是个人学习过程所写的demo,其结构大概如下:
 
-![image-20181214110345831](https://ws3.sinaimg.cn/large/006tNbRwly1fy63f7a2i9j31i00tkk1a.jpg)
+![image-20181214110345831](https://i.imgur.com/VwrYIL4.jpg)
 
 
 
@@ -81,7 +81,7 @@ Android项目实践
 ### 单工程开发模型
 该种开发模型已经有了明确的模块划分,并且通过逻辑上的分层呈现出较好结构,该模型最为我们所熟悉,通常用于早期产品的快速开发,团队规模较小的情况下.该种开发模型结构如下:
 
-![image-20181214110516196](https://ws2.sinaimg.cn/large/006tNbRwly1fy63grjbhij31dz0u0186.jpg)
+![image-20181214110516196](https://i.imgur.com/iKmaIEz.jpg)
 
 
 
@@ -100,7 +100,7 @@ Android项目实践
 ### 主工程多组件开发模型
 借助组件化这一思想,我们在"单工程"模型的基础上,将业务层中的各业务抽取出来,封装成相应的业务组件,将基础库中各部分抽取出来,封装成基础组件,而主工程是一个可运行的app,作为各组件的入口(主工程也被称之为壳程序).这些组件或以jar的形式呈现,或以aar的形式呈现.主工程通过依赖的方式使用组件所提供的功能.
 
-![image-20181214110610910](https://ws2.sinaimg.cn/large/006tNbRwly1fy63hoxeqmj31250u0dni.jpg)
+![image-20181214110610910](https://i.imgur.com/34Is4zJ.jpg)
 
 (需要注意这是理想状态下的结构图,实际项目中,业务组件之间会产生通信,也会产生依赖,关于这一点,我们在下文会谈)
 
@@ -119,7 +119,7 @@ Android项目实践
 ### 主工程多子工程开发模型
 该种开发模型在"主工程多组件"开发模型的基础上做了改进,其结构图如下:
 
-![image-20181214110637269](https://ws4.sinaimg.cn/large/006tNbRwly1fy63i5foijj310d0u0wlj.jpg)
+![image-20181214110637269](https://i.imgur.com/iCJiHL9.jpg)
 
 不难发现,该种开发模型在结构上和"主工程多组件"并无不同,唯一的区别在于:所有业务组件不再是mouble而是作为一个子工程,基础组件可以使moudle,也可以是子工程,该子工程和主工程不同:Debug模式下下作为app,可以单独的开发,运行,调试;Release模式下作为Library,被主工程所依赖,向主工程提供服务.
 
@@ -153,7 +153,7 @@ if (isDebug.toBoolean()) {
 
 除此之外,子工程中在不同的运行方式下,其AndroidMainifest.xml也是不相同的,需要为其分别提供自己AndroidManifest.xml文件:在子工程src目录下(其他位置创建)创建两个目录,用来存放不同的AndroidManifest.xml,比如这里我创建了debug和release目录
 
-![这里写图片描述](https://ws1.sinaimg.cn/large/006tNbRwly1fy63iq9if9j30v40gywi5.jpg)
+![这里写图片描述](https://i.imgur.com/a3Ic3Tj.jpg)
 接下来同样需要在该子工程的gradle构建脚本中根据构建方式制定:
 
 ```groovy
@@ -178,14 +178,14 @@ android {
 ### 组件通信与组件依赖
 在"主工程多组件"这种理想模型下业务组件是不存在相互通信和依赖的,但现实却是相反的,如下图:
 
-![image-20181214110748460](https://ws4.sinaimg.cn/large/006tNbRwly1fy63jecdthj31220u0guc.jpg)
+![image-20181214110748460](https://i.imgur.com/gq0JE8I.jpg)
 
 
 这里,业务组件1和业务组件3同时向业务组件2提供服务,即业务组件2需要同时依赖业务组件3和业务组件1.
 
 现在我们再来看一种更糟糕的情况:
 
-![image-20181214110817901](https://ws2.sinaimg.cn/large/006tNbRwly1fy63jwvf3hj316w0q6adk.jpg)
+![image-20181214110817901](https://i.imgur.com/5puinLp.jpg)
 
 
 由此看来,在业务复杂的情况下,组件与组件之间的相互依赖会带来两个问题:
@@ -196,7 +196,7 @@ android {
 #### 解决组件通信
 先来解决业务组件通信问题.当年看到上面那张复杂的组件通信图时,我们不难想到操作系统引入总线机制来解决设备挂载问题,同样,借用总线的概念我们在工程添加"组件总线",用于不同组件间的通信,此时结构如下:
 
-![image-20181214110906701](https://ws3.sinaimg.cn/large/006tNbRwly1fy63kqcfb6j31b80p8n07.jpg)
+![image-20181214110906701](https://i.imgur.com/ABv4JnM.jpg)
 
 所有挂载到组件总线上的业务组件,都可以实现双向通信.而通信协议和HTTP通信协议类似,即基于URL的方式进行.至于实现的方式一种可以基于系统提供的隐式意图的方式,另一种则是完全自行实现组件总线.这篇文章不打算在此不做详细说明了.
 

@@ -27,13 +27,13 @@ Base64首先定义一个可见字符的索引表,按照规定,字符选用了`A-
 
 字符索引表结构如下:
 
-  ![image-20181120152040773](https://ws2.sinaimg.cn/large/006tNbRwly1fxejz5u64lj312e0mgtba.jpg)
+  ![image-20181120152040773](https://i.imgur.com/THhlJsk.jpg)
 
 ## abc编码实例
 
 假设我们要将abc进行编码,根据上述流程,其变化如下:
 
-![image-20181120151944396](https://ws3.sinaimg.cn/large/006tNbRwly1fxejy5vcehj314k0e475h.jpg)
+![image-20181120151944396](https://i.imgur.com/3OUetHh.jpg)
 
 因此对abc编码之后的结果为`YWJj`.
 
@@ -47,7 +47,7 @@ Base64首先定义一个可见字符的索引表,按照规定,字符选用了`A-
 
 以对A进行编码为例,其过程如下所示:
 
-![image-20181120151845402](https://ws1.sinaimg.cn/large/006tNbRwly1fxejx6v5tmj314m0e40tv.jpg)
+![image-20181120151845402](https://i.imgur.com/3K9o0O5.jpg)
 
 最终编码结果为`QQ==`.
 
@@ -55,7 +55,7 @@ Base64首先定义一个可见字符的索引表,按照规定,字符选用了`A-
 
 以对AA进行编码为例,其过程如下所示:
 
-![image-20181120151753037](https://ws4.sinaimg.cn/large/006tNbRwly1fxejw8a6raj314k0fcjsk.jpg)
+![image-20181120151753037](https://i.imgur.com/FGBvVz5.jpg)
 
 最终编码结果为`QUE=`.
 
