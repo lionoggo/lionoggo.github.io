@@ -11,7 +11,7 @@ description: 在16年时,写过一篇关于AccessibilityService使用的文章�
 
 首先我们需要明确在整个AccessibilityService体系中共包含三个部分,其结构基本如下:
 
-![image-20181225174719637](https://ws1.sinaimg.cn/large/006tNbRwly1fyj4wv7zqrj317a0o6tco.jpg)
+![image-20181225174719637](https://tva1.sinaimg.cn/large/006tNbRwly1fyj4wv7zqrj317a0o6tco.jpg)
 
 - 被监控应用端: 即我们需要监控的应用,比如微信,系统某些界面等等;
 - 监控服务端: 用来实时接受来自被监控应用端的事件,并作出处理,即我们自行实现的AccessibilityService
@@ -29,7 +29,7 @@ description: 在16年时,写过一篇关于AccessibilityService使用的文章�
 
 在开发辅助服务时,需要我们继承AccessibilityService,那AccessibilityService到底是什么呢?首先来看一张基本结构图:
 
-![image-20181225180514185](https://ws1.sinaimg.cn/large/006tNbRwly1fyj5f0kwq7j31890u0akz.jpg)
+![image-20181225180514185](https://tva1.sinaimg.cn/large/006tNbRwly1fyj5f0kwq7j31890u0akz.jpg)
 
 AccessibilityService继承自Service,也就是说它就是一个标准的服务,该服务只能由AMS进行绑定.
 
@@ -492,13 +492,13 @@ public class UserState {
 
 最终初始化完成后,在AMS进程一端,AMS持有远程AccessibilityService中IAccessibilityServiceClientWrapper的本地代理对象,在AMS需要和AccessibilityService通信时,就会远程回调IAccessibilityServiceClientWrapper中Callbacks接口;此外AccessibilityService也持有了AMS端中对应AccessibilityServiceConnection的本地代理对象,在AccessibilityService需要和AMS通信时便会借助该代理对象.
 
-![image-20181225231722678](https://ws1.sinaimg.cn/large/006tNbRwly1fyjefsx7hlj31f00kgjt8.jpg)
+![image-20181225231722678](https://tva1.sinaimg.cn/large/006tNbRwly1fyjefsx7hlj31f00kgjt8.jpg)
 
 ## 小结
 
 当AMS监听到一些系统状态变化时,最终会调用`onUserStateChangedLocked()`进行用户状态更新操作.在此期间会根据componentName,在mEnabledServices里面查找enabled状态的AccessibilityService组件,并为其生成对应AccessibilityServiceConnection对象,然后调用该对象的`bindLocked()`方法,在`bindLocked()`中会调用context的`bindServiceAsUser(mIntent...)`来绑定AccessibilityService.
 
-![image-20181226215836704](https://ws1.sinaimg.cn/large/006tNbRwly1fykhsbwuf4j31ko0u0qi4.jpg)
+![image-20181226215836704](https://tva1.sinaimg.cn/large/006tNbRwly1fykhsbwuf4j31ko0u0qi4.jpg)
 
 
 
@@ -919,7 +919,7 @@ com.android.server.accessibility.AccessibilityManagerService#addClient
 
  对于每个客户端而言,即从AccessibilityManager传来的mClient对象,也就是该方法的callback参数,AccessibilityManagerService会将其封装为Client.
 
-![image-20190113184139607](https://ws1.sinaimg.cn/large/006tNc79ly1fz558yimelj310s0bct9o.jpg)
+![image-20190113184139607](https://tva1.sinaimg.cn/large/006tNc79ly1fz558yimelj310s0bct9o.jpg)
 
 ### AccessibilityManager#sendAccessibilityEvent
 
