@@ -3,13 +3,13 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: 浮游
+title: Floating Cat
 subtitle: lionoggo.com
 description: 猫的故事里有我
 keywords:
 author: lionoggo 
 language: zh-CN 
-timezone:
+# timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
@@ -73,7 +73,7 @@ pagination_dir: page
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: archer 
+theme: fluid
 
 live2d:
   enable: true
@@ -92,6 +92,18 @@ live2d:
   mobile:
     show: true
 
+feed:
+  type: atom
+  path: atom.xml
+  limit: 20
+  hub:
+  content:
+  content_limit: 140
+  content_limit_delim: ' '
+  order_by: -date
+  icon: icon.png
+  autodiscovery: true
+  template:
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
