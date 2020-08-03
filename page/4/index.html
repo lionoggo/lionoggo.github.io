@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 100vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+          </div>
+
+          
+            <div class="scroll-down-bar">
+              <i class="iconfont icon-arrowdown"></i>
+            </div>
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-md">
+        <div class="py-5" id="board"
+          style=margin-top:0>
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/12/05/%E4%BB%8EVFS%E7%9C%8B%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/">从VFS谈文件读写</a>
+
+      <a href="/2015/12/05/%E4%BB%8EVFS%E7%9C%8B%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/" class="index-excerpt">
+        
+        
+          
+        
+        <div>内核态与用户态在CPU的所有指令中,有一些指令是非常危险的,误用将导致系统崩溃.为了安全起见CPU将指令分为特权指令和非特权指令，对于那些危险的指令，只允许操作系统及其相关模块使用，普通的应用程序只能使用那些不会造成灾难的指令.Intel CPU提供0到3四种级别的运行模式，数字越小特权越高.在Linux机器上，CPU只会在以下两种模式下运行:
+
+受信任的内核模式(0级别),对应于Linux中的内</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-12-05
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Linux/">Linux</a>
+            
+              <a href="/tags/VFS/">VFS</a>
+            
+              <a href="/tags/%E5%86%85%E6%A0%B8%E6%80%81/">内核态</a>
+            
+              <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8/">系统调用</a>
+            
+              <a href="/tags/I-O%E7%BC%93%E5%86%B2%E5%8C%BA/">I/O缓冲区</a>
+            
+              <a href="/tags/%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/">文件读写</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/12/01/StringBuilder%E5%92%8CStringBuilder%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">StringBuilder &amp; StringBuffer设计与实现</a>
+
+      <a href="/2015/12/01/StringBuilder%E5%92%8CStringBuilder%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="index-excerpt">
+        
+        
+          
+        
+        <div>AbstractStringBuilderStringBuilder与StringBuffer是两个常用的操作字符串的类,两者最大的区别在于StringBuilder是线程不安全的，而StringBuffer是线程安全的,此外前者是JDK1.5加入的.后者在JDK1.0就有了.
+和String不同,StringBuilder和StringBuffer都是基于数组扩容来实现,其核心代码在其父类Abs</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-12-01
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/String/">String</a>
+            
+              <a href="/tags/StringBuffer/">StringBuffer</a>
+            
+              <a href="/tags/StringBuilder/">StringBuilder</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/11/13/%E6%B7%B1%E5%85%A5JVM%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/">谈JVM类加载机制</a>
+
+      <a href="/2015/11/13/%E6%B7%B1%E5%85%A5JVM%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" class="index-excerpt">
+        
+        
+          
+        
+        <div>类加载机制 虚拟机将class文件加载到内存，并对数据校验、转换解析和初始化，最终形成可以被虚拟机直接使用的java类型。在java中语言中类的加载、连接和初始化过程都是在程序运行期间完成的，因此在类加载时的效率相对编译型语言较低，除此之外，只有在任何一个类只有在运行期间使用到该类的时候才会将该类加到内存中。总之，java依赖于运行期间动态加载和动态链接来实现类的动态使用。其整个流程如下：
+  
+</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-11-13
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">JVM</a>
+            
+              <a href="/tags/Classloader/">Classloader</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/11/01/%E6%B7%B1%E5%85%A5JVM%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/">谈JVM内存区域</a>
+
+      <a href="/2015/11/01/%E6%B7%B1%E5%85%A5JVM%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/" class="index-excerpt">
+        
+        
+          
+        
+        <div>JVM内存区域首先，先大体的了解一下JAVA虚拟机运行时的内存结构：
+
+从线程的角度来看，总体分为私有和共享的两部分。共享的数据区为方法区，堆，本地库接口，以及每个JVM虚拟机中的JVM执行引擎，而线程私有的数据区则为虚拟机栈，本地方法栈，程序计数器。
+线程共享数据区堆在Java中我们最熟悉的就是对象，在内存中用来存放内存对象实例的区域称之为堆(Heap)，此区域由线程内存共享，在进行垃圾回收时，</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-11-01
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">JVM</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/10/30/%E4%BA%86%E8%A7%A3JVM%E5%AD%97%E8%8A%82%E7%A0%81%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/">谈JVM字节码执行引擎</a>
+
+      <a href="/2015/10/30/%E4%BA%86%E8%A7%A3JVM%E5%AD%97%E8%8A%82%E7%A0%81%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/" class="index-excerpt">
+        
+        
+          
+        
+        <div>就目前而言，所有的执行引擎的基本一致：
+
+输入：字节码文件
+处理：字节码解析
+输出：执行结果。
+
+物理机的执行引擎是由硬件实现的，和物理机的执行过程不同的是虚拟机的执行引擎由于自己实现的。
+运行时候的栈结构每一个线程都有一个栈,也就是前文中提到的虚拟机栈，栈中的基本元素我们称之为栈帧。栈帧是用于支持虚拟机进行方法调用和方法执行的数据结构。每个栈帧都包括了一下几部分：局部变量表、操作数栈、动态连接、</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-10-30
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">JVM</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/10/15/%E8%B0%88JVM%E5%85%B3%E9%97%AD%E4%B8%8E%E5%85%B3%E9%97%AD%E9%92%A9%E5%AD%90/">谈JVM关闭与关闭钩子</a>
+
+      <a href="/2015/10/15/%E8%B0%88JVM%E5%85%B3%E9%97%AD%E4%B8%8E%E5%85%B3%E9%97%AD%E9%92%A9%E5%AD%90/" class="index-excerpt">
+        
+        
+          
+        
+        <div>JVM关闭通常而言，对于JVM的关闭我们很少去关注，但是了解JVM的关闭能帮我们在JVM关闭时做一些合理的事情。首先JVM的关闭方式可以分为三种：
+
+正常关闭：当最后一个非守护线程结束或者调用了System.exit或者通过其他特定平台的方法关闭（发送SIGINT，SIGTERM信号等）
+强制关闭：通过调用Runtime.halt方法或者是在操作系统中直接kill(发送SIGKILL信号)掉JVM</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-10-15
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">JVM</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2015/01/17/%E8%B0%88Java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/">Java异常体系</a>
+
+      <a href="/2015/01/17/%E8%B0%88Java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/" class="index-excerpt">
+        
+        
+          
+        
+        <div>异常体系异常是指由于各种不期而至的情况,导致程序中断运行的一种指令流,如:文件找不到,非法参数,网络超时等.为了保证正序正常运行,在设计程序时必须考虑到各种异常情况,并正确的对异常进行处理.异常也是一种对象,java当中定义了许多异常类,并且定义了java.lang.Throwable作为所有异常类的基类.
+Java语言设计者将异常划分为两类:Error和Exception,其体系结构大致如下图所</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2015-01-17
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">JVM</a>
+            
+              <a href="/tags/Java/">Java</a>
+            
+              <a href="/tags/Exception/">Exception</a>
+            
+              <a href="/tags/Error/">Error</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+
+
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <a class="extend prev" rel="prev" href="/page/3/"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span>
+    </span>
+  </nav>
+  
+  <script>
+    for (ele of document.getElementById("pagination").getElementsByTagName("a")) {
+      ele.href += '#board';
+    }
+  </script>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "it's better to burn out than to fade away&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Android图形显示系统基本原理 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2017-09-12 16:01">
+                    2017年9月12日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    5k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    52
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="计算机图形显示系统"><a href="#计算机图形显示系统" class="headerlink" title="计算机图形显示系统"></a>计算机图形显示系统</h1><h2 id="人眼与帧率"><a href="#人眼与帧率" class="headerlink" title="人眼与帧率"></a>人眼与帧率</h2><p>要理解应用流程度,我们首先引入FPS这个概念.FPS是Frames Per Second,它描述的是GPU在一秒内能够渲染出静态画面的数量(一张静态图片称之为一帧),通俗点讲就是GPU每秒钟能画出多少画面.FPS是衡量GPU性能的一个重要指标,通常来说性能越强的显卡,一秒内能够渲染出静态画面的数量越多,给我们的视觉效果越好.</p>
+<p>解释完帧率之后,我们还要具备一点生物学的知识,即需要了解视觉暂留现象.由于人眼特殊的生理结构,如果所看的画面以每秒10~12帧的速度播放时,此时我们就认为这些图片时连贯的,这种现象就是视觉暂留.在视觉暂留的基础上,如果我把一张一张的静态图像按顺序以一定的速度出现在我们眼前,此时我们大脑就会认为画面中的物体是在运动的,这就是典型动画的原理.</p>
+<h2 id="屏幕刷新率与VSync"><a href="#屏幕刷新率与VSync" class="headerlink" title="屏幕刷新率与VSync"></a>屏幕刷新率与VSync</h2><p>FPS是描述GPU的一个重要指标,但GPU画出来的图像需要借助显示器来显示出来才能被我们所感知.与帧率相对应,显示器也有一个指标用来描述一秒内从GPU取出画面的的数量,我们称之为刷新率.</p>
+<p>屏幕刷新率(Refresh Rate)是指屏幕每秒钟更新画面的次数,对于特定设备而言它是个常量,单位Hz.为了方便,我们采用一张图来描述其关系:</p>
+<p><img src="https://i.imgur.com/QqVSdp2.png" srcset="/img/loading.gif" alt="image-20181127192131031"></p>
+<p>由于帧率和刷新率分别是用于描述不同设备的指标,而这两个指标因设备不同而有所差异,换句话说这两者并不总是能保持相同的节奏,根据情况,可以分为以下三种:</p>
+<ul>
+<li>帧率和刷新率相等</li>
+<li>帧率大于刷新率</li>
+<li>帧率小于刷新率</li>
+</ul>
+<p>在帧率和刷新率相等的情况,GPU每画出一帧,显示器就显示一帧,但实际情况却是由于硬件不同或需要渲染的界面复杂度问题,我们很难保证帧率和刷新率一定是相等的.实际上,更多的是遇到除此之外的情况,即后两者.但其余两种情况都会或多或少的产生问题.</p>
+<h3 id="帧率小于刷新率"><a href="#帧率小于刷新率" class="headerlink" title="帧率小于刷新率"></a>帧率小于刷新率</h3><p>在帧率小于刷新率的情况下,比如帧率是30fps,显示器刷新率是60HZ,此时我们一秒钟内看到屏幕内的画面还是更新了60次,只不过其中一些更新画面是没有变化的而已,因此该情况下由显卡输出的一张图片(一帧)实际上在显示器期内被刷新了两次而已,这种现象带给我们的就是卡顿感.</p>
+<p><img src="https://i.imgur.com/Aif4jk3.png" srcset="/img/loading.gif" alt="image-20181128103849709"></p>
+<h3 id="帧率大于刷新率"><a href="#帧率大于刷新率" class="headerlink" title="帧率大于刷新率"></a>帧率大于刷新率</h3><p>那对于帧率大于刷新率的情况又是如何呢?比如帧率是75fps,刷新率是100Hz,这意味在显示器更新画面的时间里,GPU描画了1+1/3的画面.这样在画面显示的时候,那个1/3的画面就会覆盖那个完整画面上部的1/3,在下次的图像刷新的时候,GPU会描画剩下来得2/3和新的2/3的画面.因为屏幕的更新只能跟上画面更新的2/3,这样图像的上部的1/3或是下部的1/3就会和剩下的画面合不上,以屏幕快速显示数字为例,在帧率和屏幕显示率一致的情况下,其效果如下:</p>
+<p><img src="https://i.imgur.com/wuAnkzo.png" srcset="/img/loading.gif" alt="image-20181128101842907"></p>
+<p>但在帧率大于刷新率的情况下可能出现以下现象:</p>
+<p><img src="https://i.imgur.com/dsNKxfI.png" srcset="/img/loading.gif" alt="image-20181128101938613"></p>
+<p>对于像上图所示的现象,我们称之为画面撕裂,即一个画面上出现了两帧画面的内容.如何解决画面撕裂问题呢?在了解其解决方案之前,得先来认识Vsync.</p>
+<h2 id="显卡与VSync"><a href="#显卡与VSync" class="headerlink" title="显卡与VSync"></a>显卡与VSync</h2><h3 id="CRT显示器与VSync"><a href="#CRT显示器与VSync" class="headerlink" title="CRT显示器与VSync"></a>CRT显示器与VSync</h3><p>VSync(Verti Synchronization)在计算机显示系统领域是一个非常古老的名词了,通常我们将它翻译成垂直同步.VSync是显卡的一项功能,用来限制GPU绘制的帧数,使其与显示器在一秒内刷新的次数相匹配,也就是指显卡的输出帧数和屏幕的垂直刷新率相等.其实VSync本来只是CRT显示器上的概念,CRT即我们常说的模拟显示器,其显示原理是通过电子枪扫描荧光屏来显示图像的.其扫描过程是从左到右,从上到下逐行刷新的过程,前者称之为水平刷新,后者称之为垂直刷新,其流程大概如下所示:</p>
+<p><img src="https://i.imgur.com/Vg3yPIb.png" srcset="/img/loading.gif" alt="image-20181127174542323"></p>
+<p>假设我们现在有一个<code>4*4</code>的图片要显示在<code>4*4</code>的显示器上(单位是像素):</p>
+<table>
+<thead>
+<tr>
+<th>A1</th>
+<th>A2</th>
+<th>A3</th>
+<th>A4</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>B1</td>
+<td>B2</td>
+<td>B3</td>
+<td>B4</td>
+</tr>
+<tr>
+<td>C1</td>
+<td>C2</td>
+<td>C3</td>
+<td>C4</td>
+</tr>
+<tr>
+<td>D1</td>
+<td>D2</td>
+<td>D3</td>
+<td>D4</td>
+</tr>
+</tbody></table>
+<p>当显示器要电子枪扫描到最后一个像素D4时,显卡会发出一个VSync信号,来通知显示器已经完成一帧画面的扫描,需要回到A1开始进行下一帧的扫描.总之,这个VSync信号由显卡发出,一方面用来告诉显示器需要回到A1位置,另一方面通知显卡准备输出下一帧画面.</p>
+<p>在LCD显示器中已经没有垂直扫描这回事了,因此VSync名字本身已经没有意义了.但是LCD仍然需要VSync信号,不然显卡就无法知道在什么时候才可以输出下一帧画面,显示器也无法知道什么时候可以开始处理一帧画面.因此这个VSync这个名称就这样沿袭下来.</p>
+<p>现在,我们只需要记住VSync就是用来保持显卡生成帧的速度和屏幕刷新的速度一致的存在,即帧率和刷新率.比如,如果屏幕的刷新率为60Hz,那么生成显卡生成一帧画面的时间就应该固定在<code>(1/60)s</code>,即60fps.</p>
+<h3 id="显卡工作流程"><a href="#显卡工作流程" class="headerlink" title="显卡工作流程"></a>显卡工作流程</h3><p>抛开具体实现不说,显卡的工作流程还是比较清晰的,简单点说它接受来自CPU和内存的数据,经过处理之后,生成一帧图片.循环往复,继续生成下一帧的图片,下图揭示了其工作流程:</p>
+<p><img src="https://i.imgur.com/FUZGCaI.png" srcset="/img/loading.gif" alt="image-20181128152242597"></p>
+<p>在上图中,需要重点注意帧缓冲器,其本质就是显存中划出来的一块区域,用于存储一帧图片每个像素点的数据,显卡会将该区域的数据依次输出到显示器中,当全部输出完毕后,会发出一个VSync信号到显示器内,如此往复.实际上,后面垂直同步,以及后面要提到双重缓存,三种缓存本质上描述的就是帧缓冲器数据输出规则.</p>
+<p>通过上图不难发现该区域的数据是由显卡的光栅操作单元生成的,此外缓冲区采取的更新策略是”新数据覆盖老数据的”,这意味着在实际数据处理过程中,缓冲区内的数据如果没有及时被输出到显示器,该区域内的部分数据可能会被由光栅操作单元生成新数据覆盖.举个例子,假设当前帧缓冲区内已经有一帧完整的图片A,此时显卡生成了下一帧的画面B,并准备写入帧缓冲区,在写到一半的时候,收到了VSync信号,这时候缓冲区的数据被输出到显示器.糟糕的是此时缓冲区的数据是一半是A画面一半是B画面,因此我们会在显示器上由两张图片拼接出来的画面,这就是画面撕裂现象的原因,之前数字4显示不全同理.</p>
+<p>那该如何解决该问题呢?分析上面问题的根源在于写缓冲区的的操作和VSync信号到来时机没有同步导致,如果我们让他们同步起来会如何呢?回想下我们是如何利用<code>生产者-消费者</code>解决同步问题的.现在我们来定义这么一条规则就是:当显卡生成一帧完整的图片并写入帧缓冲区后,停下来等待VSync信号的到来,接下来在继续渲染下一帧图片并写入缓冲区.这条规则能够保证帧缓冲区内始终是一帧完整图片的数据,就不会出现画面撕裂现象了.</p>
+<p><img src="https://i.imgur.com/AVCjaPM.png" srcset="/img/loading.gif" alt="11111111"></p>
+<h3 id="双缓冲机制"><a href="#双缓冲机制" class="headerlink" title="双缓冲机制"></a>双缓冲机制</h3><p>从性能角度出发,如果只对一块缓冲区进行读写无疑效率比较低下:一方面屏幕要从该区域去读,另一方面显卡要等待去写.因此在实际中,其实帧缓冲区实则被划分为两部分:</p>
+<ul>
+<li>前缓冲区: 用来缓存要显示到屏幕的帧数据</li>
+<li>后缓冲区: 用来缓存显卡生成的帧数据.</li>
+</ul>
+<p>屏幕只能前缓冲区读取数据用于显示,显卡只能往后缓冲区写入新生成的帧数据.需要注意的是两块缓冲区并不发生实际上的数据拷贝操作,即将后缓冲区的帧数据拷贝到前缓冲区,而是在前缓冲区的帧数据已经推到屏幕上,且新的帧数据被写入到后台缓冲区后,进行指针交换操作,将原来的后缓冲区变为前缓冲区.</p>
+<p><img src="https://i.imgur.com/S4TuSRM.png" srcset="/img/loading.gif" alt="image-20181128171645499"></p>
+<h3 id="三缓冲机制"><a href="#三缓冲机制" class="headerlink" title="三缓冲机制"></a>三缓冲机制</h3><p>三缓冲机制是在双缓冲机制基础上发展而来,其目的是在发生卡顿时能够充分利用CPU资源,同时保证尽可能快的从卡顿现象恢复成流畅状态.更具体的解释见下文.</p>
+<h1 id="Android显示系统"><a href="#Android显示系统" class="headerlink" title="Android显示系统"></a>Android显示系统</h1><p>在Android体系架构中,通常我们采用XML进行布局描述,CPU会对抽象的XML布局内容进行<code>Measure -&gt; Layout -&gt; Draw</code>操作,然后将其内容计算成Polygons(多边形)或Texture(纹理),GPU会对Polygons或Texture进行Rasterization(栅格化)操作,Rasterization后的数据会被写入到帧缓冲区等待显示器显示.下图描述了上述过程:</p>
+<p><img src="https://i.imgur.com/6OskezQ.png" srcset="/img/loading.gif" alt="image-20181128173844650">和计算机显示</p>
+<p>此外计算图形显示系统一样,Android显示系统同样会遇到屏幕刷新率和帧率一致的情况:</p>
+<ul>
+<li>帧率小于屏幕刷新率: 可能会导致卡顿现象</li>
+<li>帧率大于屏幕刷新率: 可能会导致画面撕裂现象</li>
+</ul>
+<p>对于该问题,Android采用之前计算机系统一致的方案来解决.为了更好的了解Android是如何解决赶问题的,首先要对Android显示原理有所了解.</p>
+<h2 id="Android显示原理"><a href="#Android显示原理" class="headerlink" title="Android显示原理"></a>Android显示原理</h2><p>从开发者的角度出发,Google抽象出View概念,因此在开发过程中我们只需要重点关注View的样子,而无需去了解图形系统底层知识.对于View而言,Activity只是Google我们抽象出来的View控制器,以便我们在此可以对View进行一些控制,比如控制View被点击后的行为,那View真正的载体是什么?</p>
+<p>在Android中,View真正的载体是Window,即窗口(其实用视窗系统来描述Android显示系统更形象),每一个Window都包含了各自想要显示内容,不同的Window之间有层级关系,即Z-Order,用来描述Window的显示次序,其本质就是在二维坐标系<code>x-y</code>添加了Z轴,其方向为垂直于屏幕表面指向屏幕外.</p>
+<p><img src="https://i.imgur.com/l1RiXc2.png" srcset="/img/loading.gif" alt="image-20181128180954524"></p>
+<p>每个Window对应于一个Surface,Surface内部含有一块可供”涂鸦”的画布Canvas.在Android系统提供了WindowManagerService服务用于管理系统中所有的Window.当一个应用需要渲染UI时,WindowManagerService服务会为其创建描述其Window信息的WindowState对象,然后通过SurfaceFinger服务将需要显示的多个Surface按照Z-Order次序混合输出到FrameBuffer(帧缓冲区),接下来就是等待VSync信号到来,再显示在屏幕上.</p>
+<h2 id="Android之Project-Butter"><a href="#Android之Project-Butter" class="headerlink" title="Android之Project Butter"></a>Android之Project Butter</h2><p>在Android 4.1之前,界面卡顿是Android中最受诟病的一点.为了解决界面卡顿问题,Google为Android引入了Project Butter计划,即常说的黄油计划.在该项目中,Google对Android显示系统进行重构,并引入了三个至关重要的改进:</p>
+<ul>
+<li>VSync增强: VSync不仅仅用于避免画面撕裂现象,现在它还会通知GPU在渲染下一帧之前要等待屏幕完成逐行绘制.</li>
+<li>Triple Buffer: 三缓冲机制</li>
+<li>Choreographer: 用于协同nimations,input和drawing一起工作</li>
+</ul>
+<p>需要注意的是Android中一直存在VSync机制,只不过早期VSync只是为了避免画面撕裂(screen tearing)现象.为了更好的了解增强过的VSync和Triple Buffer,我们先来看一下早期图像显示的过程,即VSync只用来避免画面撕裂的情况:</p>
+<p><img src="https://i.imgur.com/uUscHLu.png" srcset="/img/loading.gif" alt="image-20181128230745131"></p>
+<p>在上图中,横轴表示时间,纵轴表示Buffer的使用者,对于GPU和CPU一行中的长方形其代表的是帧缓冲,其宽度可以认为是处理该帧所需要的时长,而长方形中数字代表当前帧数.此外两个VSync信号之间间隔16.6ms.</p>
+<p>我们从左往右开始看,开始时当前屏幕显示第0帧,CPU和GPU开始准备第1帧的数据(CPU计算第1帧的纹理后交给GPU进行栅格化),并及时计算完成,并等待下一个VSync信号后屏幕显示第1帧画面在显示第1帧画面时,CPU和GPU开始准备第2帧的数据,但由于某些原因导致系统缓慢或者画面太复杂导致第2帧数据没有在第二个VSync信号到来时准备好,显示器仍然显示理第1帧的画面.这种同一帧数据被显示多次的情况称之为”Jank”.</p>
+<p><img src="https://i.imgur.com/3h4kzGz.png" srcset="/img/loading.gif" alt="image-20181128235257542"></p>
+<p>不难发现早期的VSync尽管能够避免画面撕裂线程,但却无法避免Jank.</p>
+<p>现在我们来看4.1之后,被增强过的VSync机制:GPU在渲染下一帧之前要等待屏幕完成逐行绘制,也就是每一帧处理都从接受到VSync信号开始,这样我们就可以充分利用这16.6ms.</p>
+<p><img src="https://i.imgur.com/wUlL8ek.png" srcset="/img/loading.gif" alt="image-20181128235621846"></p>
+<p>在上图中,时间从屏幕显示第0帧开始,CPU/GPU开始准备第1帧数据,一旦接受到下一个VSync信号,除了将原来准备好的第1帧数据显示出来,同时还会CPU/GPU还会开始准备第2帧数据…不难发现在这种情况下,CPU/GPU的工作速度和VSync保持一致,</p>
+<p>除了增强的VSync机制,Google还采用三缓冲机制来帮助从卡段中快速恢复成流畅的状态.首先来看传统的双缓冲机制,理想情况下,其工作状态如下:</p>
+<p><img src="https://i.imgur.com/Ixtd3d5.png" srcset="/img/loading.gif" alt="image-20181129001112405"></p>
+<p>在上图中,以GPU一行为例,长方形A和B分别代表两块缓冲区域,分别代表前台缓冲区和后台缓冲区.开始时A作为前台缓冲区,此时GPU会想后台缓冲区B写入帧数据;当B缓冲区准备就绪后,A,B交换,B变成前台缓冲区,A变成后台缓冲区(其交换原理并不是实质的数据拷贝和转移,详见之前).</p>
+<p>从上图看起来,一切都很流程,CPU/GPU充分利用每个16.6ms,在前一个VSync到来时开始准备数据,并在后一个VSync到来时准备好数据.但问题时,我们无法确保CPU/GPU都能在16.6ms内能够准备好数据,如下所示:</p>
+<p><img src="https://i.imgur.com/Szc0102.png" srcset="/img/loading.gif" alt="image-20181129002236319"></p>
+<p>还是从左边开始看起,此时进入第一个16.6ms,当前显示前台缓冲区A中的帧画面,与此同时CPU/GPU开始准备下一帧的数据.糟糕的是在下一个VSync信号到来之前,GPU未能及时准备好数据,也就是没有及时把帧数据写入到后台缓冲区B中,这种情况下后台缓冲区数据未就绪,因此不能交换前台缓冲区A和后台缓冲区B,这种情况下,显示器只能继续使用前台缓冲区A中的数据,即显示和之前相同的帧,即发生Jank.</p>
+<p>更糟糕的是,改进后的VSync要求每一帧数据处理必须要从接受到VSync信号开始,在这种GPU未能及时在下一个VSync到来前及时完成工作的情况,CPU在后一个16.6ms内只能处于空闲状态,也就是上图第2个16.6ms内CPU一直处在空闲状态,而不是进行下一帧的处理操作.如果CPU/GPU大部分时间内都无法完成一帧数据的处理,那么就将导致连续的卡顿现象.</p>
+<p>既然Jank难以完全避免,那如果是否能在Jank发生时充分利用CPU而不是使其处在空闲状态呢?如果能,那就可以在发生Jank后,快速恢复成流畅的状态?Google为了解决该问题,引入的三缓冲机制,即在原来双缓冲的机制上加入了第三块缓冲区.</p>
+<p><img src="https://i.imgur.com/ni8zA7z.png" srcset="/img/loading.gif" alt="image-20181129004214237"></p>
+<p>如上图,以CPU一行为例,共存在A,B,C三个缓冲区.在第一个VSync信号到来时,尽管A和B缓冲区都在使用中,但CPU仍然可以使用第三个缓冲区C来生成帧数据.从上图也可以看出,整个过程就在开始时Jank了一次,后续都是流畅的.这就是三缓冲区帮助Android从卡顿现象中快速恢复成流畅状态的原理.</p>
+<p>值得注意的是,Android系统并非一直都是启用三缓冲机制,多一个缓冲区意味着消耗更多的资源.此外一个缓冲区的帧数据要想被显示到屏幕上,最终要跨越两个VSync信号,这样会让用户感觉到延迟.</p>
+<p><img src="https://i.imgur.com/y4n7Tea.png" srcset="/img/loading.gif" alt="image-20181129005317770"></p>
+<h3 id="VSync总结"><a href="#VSync总结" class="headerlink" title="VSync总结"></a>VSync总结</h3><p>现在关于VSync和Triple Buffer的作用已经明了,接下来总结下VSync相关的知识,首先需要知道的是在Android设备中存在两种VSync信号:</p>
+<ul>
+<li>由硬件VSync产生: 由硬件中断产生,是一个脉冲信号,类似CPU时钟</li>
+<li>由软件VSync产生: 在硬件不支持的情况下,通过软件模拟产生:SurfaceFlinger会模拟该信号,并通过Binder传给Choreographer,</li>
+</ul>
+<p>简单描述下硬件是如何产生VSync信号:在Android启动过程中,init进程会启动SurfaceFinger进程,并执行main_surfaceflinger.cpp中的<code>main()</code>方法,在该方法的执行过程中会初始化HWComposer.而HWComposer就是基于硬件实现的VSync信号发生器,该信号用来通知SurfaceFlinger以便控制生成帧的速度.</p>
+<h3 id="Choreographer总结"><a href="#Choreographer总结" class="headerlink" title="Choreographer总结"></a>Choreographer总结</h3><p>Choreographer被设计用来接收VSync信号(通过注册DisplayEventReceiver来接受VSync信号)的Java类,正如含义一样,它的主要工作是用来指挥和协调动画,输入和绘制的时序.如果将显示过程当做一台舞蹈剧的话,那它无疑相当于编舞者了.在Choreographer中存在FrameCallback接口:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">FrameCallback</span> </span>&#123;
+      <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doFrame</span><span class="hljs-params">(<span class="hljs-keyword">long</span> frameTimeNanos)</span></span>;
+  &#125;</code></pre>
+
+<p>在新一帧画面被渲染时会被会调用该接口的<code>doFrame(long frameTimeNanos)</code>方法,其参数frameTimeNanos代表该帧开始渲染时的时间.基于该接口,我们可以借助它来实现帧率检测功能.</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本次主要谈了计算机图形显示系统中一些概念,如帧率和屏幕刷新率,并重点分析了卡顿和画面撕裂现象的由来.此外进一步延伸到Android显示系统部分原理.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Android/">Android</a>
+                    
+                      <a class="hover-with-bg" href="/tags/inotify/">inotify</a>
+                    
+                      <a class="hover-with-bg" href="/tags/FileObserver/">FileObserver</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/03/22/%E6%B7%B1%E5%85%A5Android%E8%BE%85%E5%8A%A9%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E4%B8%8E%E8%AE%BE%E8%AE%A1/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入Android辅助服务架构与设计</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2017/05/12/TensorFlow%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0(%E4%B8%80)/">
+                        <span class="hidden-mobile">TensorFlow学习笔记(一)</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Android图形显示系统基本原理&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

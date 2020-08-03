@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>OpenJDK系列(一):编译/调试与项目结构 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2018-06-20 13:20">
+                    2018年6月20日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    1.6k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    19
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="OpenJDK编译"><a href="#OpenJDK编译" class="headerlink" title="OpenJDK编译"></a>OpenJDK编译</h1><p>之前的基于OpenJDK8的资料由于人为因素丢失了,索性就重新来过:以OpenJDK10为例.此外,如无特殊说明,开发平台皆为MacOS.</p>
+<h2 id="源码下载"><a href="#源码下载" class="headerlink" title="源码下载"></a>源码下载</h2><p>在mac平台上,可以通过HomeBrew进行OpenJDK源码的下载,以OpenJDK10为例.由于OpenJDK的源码采用mercurial进行管理,因此需要安装mercurial,另外由于编译需要,我们同时安装ccache和freetype工具:</p>
+<pre><code class="hljs shell">brew install mercurial
+brew install install ccache
+brew install freetype</code></pre>
+
+<p>接下来通过以下命令正式进行下载:</p>
+<pre><code class="hljs shell">hg clone http://hg.openjdk.java.net/jdk10/jdk10 OpenJDK10
+<span class="hljs-meta">#</span><span class="bash"> 进入OpenJDK10目录下执行命令</span>
+bash ./get_source.sh</code></pre>
+
+<p><img src="https://i.imgur.com/DmElUJT.png" srcset="/img/loading.gif" alt="image-20180903153521528"></p>
+<p>现在我们已经将所有的源码下载到本地了,接下来我们可以进行编译来满足下好奇心,</p>
+<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><p>在正式编译之前需要我们先配置编译信息,该过程通过configure.sh脚本实现,其存放在OpenJDK源码的根目录.使用该脚本需要制定一些参数参数,在mac平台下,配置如下:</p>
+<pre><code class="hljs shell">./configure --with-target-bits=64 --with-freetype=/usr/local/Cellar/freetype/2.9.1 --enable-ccache --with-jvm-variants=server,client --with-boot-jdk-jvmargs="-Xlint:deprecation -Xlint:unchecked" --disable-zip-debug-info --disable-warnings-as-errors --with-debug-level=slowdebug 2&gt;&amp;1 | tee configure_mac_x64.log</code></pre>
+
+<p>注意不要写错freetype的路径,可以通过 brew list freetype命令来查看当前freetype的安装路径.</p>
+<p>configure中提供了大量的参数,通过命令<code>bash ./configure --help=short</code>,当然你也可以直接查看OpenJDK<a href="http://hg.openjdk.java.net/build-infra/jdk9/raw-file/tip/README-builds.html" target="_blank" rel="noopener">的官方说明</a>,这里我们只是简单介绍几个:</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>–with-target-bits</td>
+<td>设置32为/64编译</td>
+</tr>
+<tr>
+<td>–with-freetype</td>
+<td>指定freetype目录</td>
+</tr>
+<tr>
+<td>–with-jvm-variants=server,client</td>
+<td>设置要构建的JVM的变体,目前可以选择server,client,minimal,core,zero,zeroshark,custom</td>
+</tr>
+<tr>
+<td>–with-boot-jdk-jvmargs</td>
+<td>设置运行boot JDK所需要的JVM参数,例如–with-boot-jdk-jvmargs=”-Xmx8G”</td>
+</tr>
+<tr>
+<td>–with-debug-level</td>
+<td>调试等级,目前可以指定为release,fastdebug,是slowdebug,optimized</td>
+</tr>
+</tbody></table>
+<p>编译信息配置后之后,通过以下命令进行编译即可:</p>
+<pre><code class="hljs shell">export LANG=C
+make all LOG=debug 2&gt;&amp;1 | tee make_mac_x64.log</code></pre>
+
+<p>期间可能会遇到一些编译问题,<a href="https://bugs.openjdk.java.net/projects/JDK/issues/JDK-8210205?filter=allopenissues" target="_blank" rel="noopener">大多可以官网找到方法</a>,编译的产物会被存放在build目录下:</p>
+<p><img src="https://i.imgur.com/bsLAExC.png" srcset="/img/loading.gif" alt="image-20180903161446477"></p>
+<p>执行以下命令,验证下编译结果</p>
+<pre><code class="hljs java">cd OpenJDK10/build/macosx-x86_64-normal-serverANDclient-slowdebug/jdk/bin
+./java -version</code></pre>
+
+<p><img src="https://i.imgur.com/2SvqV9F.png" srcset="/img/loading.gif" alt="image-20180903161734147"></p>
+<h1 id="OpenJDK调试"><a href="#OpenJDK调试" class="headerlink" title="OpenJDK调试"></a>OpenJDK调试</h1><p>对于OpenJDK调试而言,常用的工具有gdb和lldb,在MacOS使用更多的是lldb.直接使用lldb进行调试,相对比较原始,对于比较复杂的项目还可以借助Xcode或者CLion.</p>
+<h2 id="Xcode调试OpenJDK"><a href="#Xcode调试OpenJDK" class="headerlink" title="Xcode调试OpenJDK"></a>Xcode调试OpenJDK</h2><p>以Xcode 9为例.</p>
+<h3 id="工程创建"><a href="#工程创建" class="headerlink" title="工程创建"></a>工程创建</h3><p>首先使用Xcode创建一个新的项目OpenSDK10,为Command Line Tool类型.</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwly1fuwqqejp5vj31fu10i7py.jpg" srcset="/img/loading.gif" alt="step1"></p>
+<p>点击Next继续配置其他信息.</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwly1fuwqrgvl3uj31bk0zewvt.jpg" srcset="/img/loading.gif" alt="step2"></p>
+<p>创建完成后,先删除默认生成的文件.</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNbRwly1fuwqt12oqcj310m0kq7h1.jpg" srcset="/img/loading.gif" alt="step3"></p>
+<h3 id="源码导入"><a href="#源码导入" class="headerlink" title="源码导入"></a>源码导入</h3><p> 右键OpenJDK10,选则Add Files To “OpenJDK10”,将之前用于OpenJDK10的源码根目录下的文件都添加进来.</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwly1fuwqxq6eqij30u60r0kb4.jpg" srcset="/img/loading.gif" alt="step4"></p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwly1fuwqwpjaphj310a0pa4gn.jpg" srcset="/img/loading.gif" alt="step5"></p>
+<p>现在我们来配置下项目.选择Product -&gt; Scheme -&gt; Edit Scheme.在左侧的Run选项中先配置info标签页中的Executable,此处指定为之前我们已经编译好的java命令,按照我们之前的编译配置,此处路径即为:</p>
+<p><code>/OpenJDK10/build/macosx-x86_64-normal-serverANDclient-slowdebug/jdk/bin/java</code></p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwly1fuwrbklw8ej316m0mm7a8.jpg" srcset="/img/loading.gif" alt="step9"></p>
+<p>接下来继续配置Arguments标签页中的Arguments Passed On Launch.随便写的一个Hello.java文件,如下内容:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Hello</span></span>&#123;
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span></span>&#123;
+          System.out.println(<span class="hljs-string">"Hello World !"</span>);
+    &#125;
+&#125;</code></pre>
+
+<p>然后将其放在java命令所在的目录,即上述提到的<code>/OpenJDK10/build/macosx-x86_64-normal-serverANDclient-slowdebug/jdk/bin</code>中,在该目录下执行’./javac Hello.java’将其编译成class文件.</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwly1fuwr5ainy5j31he0wa7id.jpg" srcset="/img/loading.gif" alt="step8"></p>
+<h3 id="开始调试"><a href="#开始调试" class="headerlink" title="开始调试"></a>开始调试</h3><p>到现在,所有的准备工作已经做好了,可以进行调试了.在main.c的<code>main()</code>打几个断点后开始调试.</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwly1fuwrnvz4f4j31h6118kip.jpg" srcset="/img/loading.gif" alt="step10"></p>
+<p>到现在已经可以正常调试了,但继续调试可能会遇到signal SIGSEGV错误</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwly1fuwrpwggqoj31ha0ysh9v.jpg" srcset="/img/loading.gif" alt="step11"></p>
+<p>此时只需要在lldb中设置<code>(lldb) process handle SIGSEGV --stop=false</code>,然后继续调试即可.</p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNbRwly1fuwrwggk0bj31380w6aeh.jpg" srcset="/img/loading.gif" alt="step12"></p>
+<p>不出意外,最终我们会在lldb控制台看到输出结果”<strong>Hello World !</strong> “,如下:</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwly1fuwrzyztmdj311y0qyae8.jpg" srcset="/img/loading.gif" alt="step12"></p>
+<p>至此关于Xcode下调试OpenJDK源码的流程已经完成.</p>
+<h1 id="源码目录结构"><a href="#源码目录结构" class="headerlink" title="源码目录结构"></a>源码目录结构</h1><p>OpenJDK源码结构如下:</p>
+<p><img src="https://i.imgur.com/a7Nauul.png" srcset="/img/loading.gif" alt="image-20180903162039612"></p>
+<table>
+<thead>
+<tr>
+<th>目录</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>build</td>
+<td>OpenJDK编译产物</td>
+</tr>
+<tr>
+<td>common</td>
+<td></td>
+</tr>
+<tr>
+<td>corba</td>
+<td>包含corba功能源代码</td>
+</tr>
+<tr>
+<td>hotspot</td>
+<td>包含Hotspot虚拟机实现源码</td>
+</tr>
+<tr>
+<td>jaxp</td>
+<td>jaxp功能的源代码,用于处理XML,提供了</td>
+</tr>
+<tr>
+<td>jaxws</td>
+<td>jax-ws功能的源代码,用于构建Web服务的API</td>
+</tr>
+<tr>
+<td>jdk</td>
+<td>包含Java工具包</td>
+</tr>
+<tr>
+<td>langtool</td>
+<td>语言工具的源代码如javac,javap等</td>
+</tr>
+<tr>
+<td>nashorn</td>
+<td>JavaScript引擎实现</td>
+</tr>
+</tbody></table>
+<h2 id="hotspot"><a href="#hotspot" class="headerlink" title="hotspot"></a>hotspot</h2><p>jdk是我们平时开发主要关注的地方,而hotspot使我们了解虚拟机重要的目录,下面我们来了解hotspot目录,重点来看其src子目录:</p>
+<p><img src="https://i.imgur.com/u8uWBgm.png" srcset="/img/loading.gif" alt="image-20180903163506096"></p>
+<table>
+<thead>
+<tr>
+<th>目录</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>make</td>
+<td>编译流程控制</td>
+</tr>
+<tr>
+<td>src</td>
+<td>VM源码</td>
+</tr>
+<tr>
+<td>test</td>
+<td>单元测试代码</td>
+</tr>
+</tbody></table>
+<p>src目录下包含了有关VM实现的代码:</p>
+<p><img src="https://i.imgur.com/lfBx8hW.png" srcset="/img/loading.gif" alt="image-20180903165531524"></p>
+<h3 id="cpu"><a href="#cpu" class="headerlink" title="cpu"></a>cpu</h3><p>不同平台上CPU相关的代码,</p>
+<p><img src="https://i.imgur.com/R5rhLS1.png" srcset="/img/loading.gif" alt="image-20180903164728943"></p>
+<h3 id="os"><a href="#os" class="headerlink" title="os"></a>os</h3><p>不同操作系统相关代码.根据不同的系统分为不同的目录</p>
+<p><img src="https://i.imgur.com/qKECybi.png" srcset="/img/loading.gif" alt="image-20180903164636220"></p>
+<h3 id="os-cpu"><a href="#os-cpu" class="headerlink" title="os_cpu"></a>os_cpu</h3><p>操作系统和cpu组合的相关代码.</p>
+<p><img src="https://i.imgur.com/CGsQABh.png" srcset="/img/loading.gif" alt="image-20180903164806923"></p>
+<h3 id="share"><a href="#share" class="headerlink" title="share"></a>share</h3><p>与具体平台无关的代码.该目录下又分为tools和vm目录.其中tools中提供了相关工具代码.vm是虚拟机实现的核心代码.</p>
+<p><img src="https://i.imgur.com/jb7mLvj.png" srcset="/img/loading.gif" alt="image-20180903165455427"></p>
+<h3 id="tools"><a href="#tools" class="headerlink" title="tools"></a>tools</h3><table>
+<thead>
+<tr>
+<th>目录</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>hsdis</td>
+<td>反汇编工具</td>
+</tr>
+<tr>
+<td>idealGraphVisualizer</td>
+<td>中间代码可视化工具</td>
+</tr>
+<tr>
+<td>LogCompilation</td>
+<td>将使用-XX:LogCompiliation输出的日志格式化更容易阅读的工具</td>
+</tr>
+</tbody></table>
+<h3 id="vm"><a href="#vm" class="headerlink" title="vm"></a>vm</h3><table>
+<thead>
+<tr>
+<th>目录</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>adlc</td>
+<td>平台描述文件的编译器</td>
+</tr>
+<tr>
+<td>aot</td>
+<td>aot编译器实现,用于静态编译</td>
+</tr>
+<tr>
+<td>asm</td>
+<td>汇编器接口</td>
+</tr>
+<tr>
+<td>c1</td>
+<td>Client编译器,即我们常说的C1编译器</td>
+</tr>
+<tr>
+<td>ci</td>
+<td>动态编译器公共接口</td>
+</tr>
+<tr>
+<td>classfile</td>
+<td>类文件处理</td>
+</tr>
+<tr>
+<td>code</td>
+<td>管理动态生成的代码</td>
+</tr>
+<tr>
+<td>compiler</td>
+<td>VM调用动态编译器的接口</td>
+</tr>
+<tr>
+<td>gc</td>
+<td>GC的实现,包含cms,g1,parallel,serial目录(对应四种GC器实现代码)以及有关GC器的公共代码实现目录shared</td>
+</tr>
+<tr>
+<td>interpreter</td>
+<td>解释器的实现,模板解释器和C++解释器</td>
+</tr>
+<tr>
+<td>jvmci</td>
+<td>JVM编译器接口</td>
+</tr>
+<tr>
+<td>libadt</td>
+<td>抽象数据结构</td>
+</tr>
+<tr>
+<td>logging</td>
+<td>VM通过日志记录系统</td>
+</tr>
+<tr>
+<td>memory</td>
+<td>内存管理相关</td>
+</tr>
+<tr>
+<td>metaprogramming</td>
+<td></td>
+</tr>
+<tr>
+<td>oops</td>
+<td>HotSpot中关于对象系统的实现</td>
+</tr>
+<tr>
+<td>opto</td>
+<td>Server编译器,即我们常说的C2编译器</td>
+</tr>
+<tr>
+<td>precompiled</td>
+<td></td>
+</tr>
+<tr>
+<td>prims</td>
+<td>VM对外接口以及jvmti(用于调试)实现</td>
+</tr>
+<tr>
+<td>runtime</td>
+<td>运行时支持库,比如线程管理,锁,反射等</td>
+</tr>
+<tr>
+<td>services</td>
+<td>支持JMX之类的管理功能的接口</td>
+</tr>
+<tr>
+<td>shark</td>
+<td>基于LLVM的JIT编译器</td>
+</tr>
+<tr>
+<td>trace</td>
+<td></td>
+</tr>
+<tr>
+<td>utilities</td>
+<td>一些工具类代码</td>
+</tr>
+</tbody></table>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/OpenJDK/">OpenJDK</a>
+                    
+                      <a class="hover-with-bg" href="/tags/HotSpot/">HotSpot</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/06/22/OpenJDK%E7%B3%BB%E5%88%97(%E4%BA%8C)_%E4%BB%8EClassFileParser%E8%B0%88Endian/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OpenJDK系列(二):从ClassFileParser谈Endian</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2018/03/22/%E6%B7%B1%E5%85%A5Android%E8%BE%85%E5%8A%A9%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E4%B8%8E%E8%AE%BE%E8%AE%A1/">
+                        <span class="hidden-mobile">深入Android辅助服务架构与设计</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "OpenJDK系列(一):编译/调试与项目结构&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

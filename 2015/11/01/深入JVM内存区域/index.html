@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>谈JVM内存区域 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2015-11-01 19:39">
+                    2015年11月1日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2.8k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    28
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="JVM内存区域"><a href="#JVM内存区域" class="headerlink" title="JVM内存区域"></a>JVM内存区域</h1><p>首先，先大体的了解一下JAVA虚拟机运行时的内存结构：</p>
+<p><img src="https://i.imgur.com/e5ApSVW.png" srcset="/img/loading.gif" alt="image-20181018102356172"></p>
+<p>从线程的角度来看，总体分为私有和共享的两部分。共享的数据区为方法区，堆，本地库接口，以及每个JVM虚拟机中的JVM执行引擎，而线程私有的数据区则为虚拟机栈，本地方法栈，程序计数器。</p>
+<h2 id="线程共享数据区"><a href="#线程共享数据区" class="headerlink" title="线程共享数据区"></a>线程共享数据区</h2><h3 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h3><p>在Java中我们最熟悉的就是对象，在内存中用来存放内存对象实例的区域称之为堆(Heap)，此区域由线程内存共享，在进行垃圾回收时，此区域是垃圾回收器重点关注的地方，因此我们也称之“GC堆”。早起的Java虚拟机严格按照JVM虚拟规范来涉及：任何的对象实例及数组都要在堆上分配，但随着JIT编译器的发展，许多新生的优化技术（比如对象逃逸分析技术）可允许对象根据实际情况在栈中分配，也就是说现在的虚拟机中的对象并不一定是分配在Heap当中。<br>要注意堆并不一定是连续的内存空间，只要保证是逻辑上的连续就行。（那么对象在连续的物理内存空间上分配和在不连续的物理内存空间分配的区别是什么？）</p>
+<p>可能会抛出OutOfMemoryError：当没有足够的区域实现对象实例的分配,并且该堆也没法实现扩展。</p>
+<h3 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h3><p>和堆相对的是方法区，用来存储已经被虚拟机加载的类信息、常量、静态变量以及经过JIT优化过后的代码等，和堆一样的是此区域也是线程共享的内存区域。<br>在虚拟机规范中，方法区虽然被划分为堆的一个逻辑部分，本质上并不属于堆，因此也称为非堆（Non-Heap）。<br>对于方法区的实现，虚拟机规范限制较少，因为不同的JVM团队可以选择不同的实现方案，比如HotSpot会用永生代来实现，而JRockit则采用了另外的方案。除此之外，方法区在物理上的内存空间可连续也可不连续、可实现动态扩展该区域的大小以及可实现或者不实现垃圾回收（对该区域的回收通常是常量池及类的卸载，但是效果往往较差，因此对该区域很少实现垃圾回收）。</p>
+<p>可能会抛出OutOfMemoryError：当方法区无法满足内存分配需求时</p>
+<h3 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h3><p>运行时常量池(Runtime Constant Pool)是方法区的一部分，用于存放编译期间生成符号引用和各种字面量，其中符号引用会在连接中的解析阶段直接被替换为直接引用。需要注意的是，常量也可以在运行期间动态的被添加到常量池，以便提高效率，比如常见String中的intern()方法。</p>
+<p>可能会抛出OutOfMemeoryError：因常量池也属于方法区，因此在申请不到内存的时候也会抛出异常。</p>
+<h2 id="线程私有数据区"><a href="#线程私有数据区" class="headerlink" title="线程私有数据区"></a>线程私有数据区</h2><h3 id="虚拟机栈"><a href="#虚拟机栈" class="headerlink" title="虚拟机栈"></a>虚拟机栈</h3><p>当一个线程被创建时，虚拟机栈也随之被创建，该区域为线程私有，无法被其他线程使用，因此不存在线程安全问题（从一个线程的角度来看，其中的方法执行顺序都是串行；当线程销毁时，该虚拟机栈也随之被销毁，JVM会自动释放该内存区域。虚拟机栈本身是一个先进后出的数据结构。在该线程中，每执行一个方法，就会生成一个栈（Stack Frame），并被压入虚拟机栈，当该方法执行完毕之后，该栈帧会被弹出，也就是说方法调用和方法返回的过程对应着栈帧入站和出栈的操作。更深的了解参看<a href="http://blog.csdn.net/dd864140130/article/details/49515403" target="_blank" rel="noopener">深入字节码执行引擎</a></p>
+<p>可能抛出的异常：<br>StackOverflowError：如果线程内请求的栈深度超过虚拟机允许的深度，会抛出该异常。<br>OutOfMemoryError：如果虚拟机允许动态扩展栈的大小，但是在扩展时无法申请到足够的内存空间，会抛出该异常。</p>
+<h3 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h3><p>虚拟机栈中栈帧对应的是java方法，执行的是字节码，而本地方法栈则对应的是Native方法。另外需要本地方法的实现方式并没有严格的规定，其使用的语言、数据结构没有统一的规定，对于该部分的实现，不同的团队也会有不同的实现。</p>
+<p>可能抛出的异常：<br>和虚拟机栈类似，也会抛出StackOverflowError和OutOfMemoryError异常。</p>
+<h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>每个线程内都有一块内存区域用来记录要执行的指令的地址，也就是所说的程序计数器。它用来描述需要执行哪一条字节码指令，该区域同样为线程私有。在一个线程内，从宏观的角度去看，所有要执行的指令可视为一个指令表（如下图所示），而程序计数器可视为当前正在执行的指令的行号。在执行过程中，字节码解释器，通过修改该区域的值来选择下一条要执行的指令的地址，而执行引擎则根据该区域的值来执行相应的指令，进而实现跳转、循环、线程恢复等操作。如果执行的native方法，则该计数器的值为Undefined。</p>
+<p><img src="https://i.imgur.com/28wtn8t.png" srcset="/img/loading.gif" alt="image-20181018102453342"></p>
+<p><img src="https://i.imgur.com/5AkRoKk.png" srcset="/img/loading.gif" alt="image-20181018102511284"><br>（上面两图我表示一个函数的指令集合，因为在线程内，函数的执行时串行的，同样可视为一个大的指令表）</p>
+<p>现在我们简单的谈谈程序技术器为什么会被设计成线程私有的？如果JVM是单线程，那么程序计数器被设计成全局性的，是没有问题，因为同一时刻只能有一条指令被执行。而JVM是多线程，并且其多线程是则主要是通过处理器切换时间片来实现的。在支持多核多线程的处理器中，在同一时刻会有多个线程同时执行，而每个线程执行的指令或许都是不同的，如果此时在将程序计数器设计成全局唯一的，那显然是有问题的（程序计数器在某一个时刻，只能指向一条正在执行的指令），因此为了在线程切换能恢复到正确的执行位置，每个线程都需要有一个独立的程序计数器，且不能被外部随意修改和访问。</p>
+<p>该区域占用空间极小，虚拟机规范中没有规定该区域会抛出OutOfMemoryError异常，换言之，根本不会抛出异常。</p>
+<h1 id="对象的内存结构"><a href="#对象的内存结构" class="headerlink" title="对象的内存结构"></a>对象的内存结构</h1><p>上面简单谈了JAVA的内存结构，下面简单的说说我们常见的“对象”的内存结构。我们以Hotspot虚拟机为例，其对象的内存结构大体分为三块区域：1、对象头；2、实例数据；3、对齐填充。结构如下图所示：</p>
+<p><img src="https://i.imgur.com/Yz63X7S.png" srcset="/img/loading.gif" alt="image-20181018102546630"></p>
+<p>1、实例数据是JAVA开发者最熟悉的部分，存储了我们在程序代码中所定义的各种类型的字段内容，是我们在开发过程中终点关注也是频繁操作的地方。<br>2、对齐填充区根据JVM的设计，可有可无，没有具体的功能实现，更多是为了让整个对象整齐（以倍数的形式存在），能被以统一的形式被处理。<br>3、对象头主要是对内服务，普通JAVA无需关心，其目的是为该对象设置附加数据，用于内容的识别和查找。该区域被划分为两部分，一部分用于存储对象自身的运行时数据，比如hashcode，锁标志，时间戳等信息，该部分也被称为Mark Word。另一部分则是类型指针<a href="并不是所有的JVM实现都要求对象头一定要有类型指针。">^1</a>，通过该指针，JVM能够确定该对象是那个类的实例。（为了更方便认知，我将第一部分称之为状态区，第二部分成为定位区）</p>
+<p>那么对象头的存在解决了什么问题呢？通俗的说就是帮助JVM虚拟机了解这个对象：解决了它是谁的实例，它的独特性质是什么？现在再来细化一下上面的结构图</p>
+<p><img src="https://i.imgur.com/AFLCfLf.png" srcset="/img/loading.gif" alt="image-20181018102625175"></p>
+<h1 id="对象创建"><a href="#对象创建" class="headerlink" title="对象创建"></a>对象创建</h1><p>在JAVA开发中，常用的几种创建对象的方式有以下几种：</p>
+<ol>
+<li>通过new创建对象</li>
+<li>通过使用反射机制，java.lang.reflect.Constructor类的newInstance()</li>
+<li>通过调用对象的clone（）方法</li>
+<li>同对象反序列化技术，调用java.io.ObjectInputStream对象的readObject（）方法。<br>第一种方式是我们最常使用，我们就来简单的解释一下该过程中，对象是如何被创建起来的，首先我们简单的参考该流程图：<br><img src="https://i.imgur.com/SYh3rUZ.png" srcset="/img/loading.gif" alt="image-20181018102724578"></li>
+</ol>
+<blockquote>
+<p>1、虚拟机碰到new指令时，首先检查该指令的参数是否在常量池中能定位到一个类的引用，并检查符合引用代表的类是否已经被加载、解析和初始化过，如果没有则需要首先执行类加载过程。<br>2、类加载检查通过后，则为该对象分配内存空间。<br>3、内存分配完成后，该内存区域会被重置，业绩空间会被初始化为零值（对象头例外）<br>4、设置对象头信息<br>5、前四部完成之后，代表已经生成了一个未被初始化的对象，但是<code>init（）</code>方法还未执行，对象的字段还是零。因此一旦<code>init()</code>执行完毕之后，一个完整的对象才正式生成。</p>
+</blockquote>
+<h1 id="对象的查找"><a href="#对象的查找" class="headerlink" title="对象的查找"></a>对象的查找</h1><p>在栈中，对象的引用（reference）并不代表堆中真正的对象，那如何通过栈中对象的引用（reference）来操作堆中的具体对象呢？这个从对象引用来定位到真实对象的过程有两种实现的方式：</p>
+<ul>
+<li>句柄定位</li>
+<li>直接定位</li>
+</ul>
+<h2 id="句柄定位"><a href="#句柄定位" class="headerlink" title="句柄定位"></a>句柄定位</h2><p>该种方式会在堆中实现划分出一块区域做句柄池，reference中存储的是对象的句柄地址，而句柄中包含对象的实例数据和类型数据的具体内存地址。<br>其结构如下:<img src="https://i.imgur.com/8sznEsP.png" srcset="/img/loading.gif" alt="image-20181018102756229"></p>
+<h2 id="直接定位"><a href="#直接定位" class="headerlink" title="直接定位"></a>直接定位</h2><p>在该种方式中，reference中存储的是堆中真实对象的地址。<br><img src="https://i.imgur.com/HGQ16bp.png" srcset="/img/loading.gif" alt="image-20181018102824287"></p>
+<p><strong>两者比较：</strong><br>句柄定位中reference存储的是句柄地址，相对稳定，对象改变时不会影响只需修改对象实例数据，而无须修改reference。<br>和句柄定位相比，直接定位的reference存储的是就是对象的地址，少了一层定位的过程，因此效率更高。除此之外,采用句柄定位更有利于GC机制的实现.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JVM/">JVM</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2015/11/13/%E6%B7%B1%E5%85%A5JVM%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">谈JVM类加载机制</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2015/10/30/%E4%BA%86%E8%A7%A3JVM%E5%AD%97%E8%8A%82%E7%A0%81%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/">
+                        <span class="hidden-mobile">谈JVM字节码执行引擎</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "谈JVM内存区域&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

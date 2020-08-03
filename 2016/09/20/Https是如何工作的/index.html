@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Https简易工作原理 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2016-09-20 17:26">
+                    2016年9月20日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2.3k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    23
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>最近在看到这么一篇讲解Https原理的文章，语言精炼，通俗易懂，特地将其翻译下，原文在此<a href="http://www.songzhw.com/2016/09/13/how-does-https-work/" target="_blank" rel="noopener">how does https work</a></p>
+<h1 id="加密算法简介"><a href="#加密算法简介" class="headerlink" title="加密算法简介"></a>加密算法简介</h1><p>正文开始之前，我先来解释简单的解释下对称加密和非对称加密.</p>
+<blockquote>
+<p><strong>对称加密</strong>采用对称密码编码技术，也就是编码和解码采用相同描述字符，即加密和解密使用相同的密钥，实现这种加密技术的算法称对称加密算法。对称加密使用简单，密钥较短，加密和解密过程较快，耗时短，常见的对称加密算法有DES，3DES，lDEA，AES，RC4等。</p>
+</blockquote>
+<blockquote>
+<p><strong>非对称加密</strong>与对称加密不同，其加密算法需要两个密钥：公开密钥（publickey）和私有密钥（private），两者是一对的。如果用公钥加密，只能用私钥才能解密。非对称加密保密性好，但加密和解密花费的时间较长，不适合对大文件加密而只适合对少量的数据加密。常见的非对称加密算法有RSA，ECC，DSA(数字签名)等。</p>
+</blockquote>
+<blockquote>
+<p><strong>Hash算法</strong>是一种单向算法，通过Hash算法可以对目标数据生成一段特定长度、唯一的hash值,但是不能通过这个hash值重新计算出原始的数据，因此也称之为摘要算法，经常被用在不需要数据还原的密码加密以及数据完整性校验上，常用的算法有MD2，MD4，MD5，SHA等。</p>
+</blockquote>
+<p>现在我们对对称加密，非对称加密及Hash算法做了简单的说明之后，就可以开始了解https的工作原理了。</p>
+<hr>
+<h1 id="https是如何工作的？"><a href="#https是如何工作的？" class="headerlink" title="https是如何工作的？"></a>https是如何工作的？</h1><p>这篇文章是我在我团队中分享的。很多人不理解https的好处，不理解https的原理，因此我将这篇文章也分享给大家。</p>
+<h2 id="加密（Cipher）"><a href="#加密（Cipher）" class="headerlink" title="加密（Cipher）"></a>加密（Cipher）</h2><p>在java 1.2时，引入JCR（java 加密扩展）系统，用来负责java中的密钥和证书。</p>
+<p>我们都知道，如果我们想要加密或解密一些信息，我们必须要有一个密钥。这好比你想要开门或者锁门，必须要有钥匙一样。</p>
+<p>在java中，密钥由KeyGenerator或KeyPairGenerator生成。前者用来生成对称密钥，后者用来生成非对称密钥。</p>
+<ul>
+<li>对称密钥：使用同一个密钥进行加密和解密</li>
+<li>非对称密钥：使用不同的密钥进行加密和解密，通常被称为公钥（public key）和私钥（private key）。 公钥可以广泛传播，但是私钥只有其所有者知道。在一个安全的非对称密钥加密方案中，当信息用公钥加密后，只有用私钥才能解密。所以，即使一个黑客拿到你公钥加密过后的信息，也无法解密它，因为它没有配对的私钥。这样，传输的消息就是安全的。</li>
+</ul>
+<h2 id="证书（Certificate）"><a href="#证书（Certificate）" class="headerlink" title="证书（Certificate）"></a>证书（Certificate）</h2><p>在现实中，如果你进入到钻石专卖店中想要买一颗钻石，你怎么知道钻石是真的？作为一个普通人来说，我们没有钻石方面的知识，但是如果这钻石有个由美国政府颁发的许可证，我们就会相信它是真的。（去过珠宝店的同学都知道，每件珠宝都有自己的鉴定书）</p>
+<p>证书的作用也是如此。在计算机世界中，它可能是包含一些密钥，是另一个证书（姑且称之为证书B好了）。这些密钥是我们需要的，而证书B是一个许可证，用来证明这个证书是可信赖的。</p>
+<blockquote>
+<p>做个简短的解释，每个钻石都有自己的“身份证书”，但是如何说明这个身份证书是合法的，而不是自己伪造的？因此，我们需要一个权威的机构来证明这个钻石的身份证书是合法的，如果这个钻石的身份是合法的，该权威机构就会为其颁发一个“许可证”，这个许可证就相当于上面我们说到的证书B。可以看到，证书B的目的就是证明这个身份证书是这个钻石的身份证书，即证明某某东西是某某东西的东西</p>
+</blockquote>
+<p>问题来了：我们怎么确定证书B是可信赖的呢？这个问题非常棒。</p>
+<p>Android已经把将近150个CA根证书（数字证书认证机构认证过的证书）内置在我们手机中。这150多个证书被全世界信赖，他们就像是美国的大法官。</p>
+<blockquote>
+<p>这150多个证书类似我们刚才说的证书B，分别用来证明某某东西是某某东西的东西</p>
+</blockquote>
+<p>B证书中里有另外一个证书（姑且称之为C证书），我们通过检查C来确定C是否是可信任的。。。通过这个证书链，如果我们找到的最后一个或根证书 和手机中预置的150个证书中某个相同，我们就可以这个证书原件（此处就是B）</p>
+<blockquote>
+<p>这里我对证书链进行说明。证书之间的信任关系是可以嵌套的。比如，CA信任D，D信任C，C信任B<br>,B信任A。。。这就是证书链。只要我们信任证书链上的头一个证书，那么后续的证书都是可以信任的。这里也就是如果我信任了证书CA，那么后面的D，C，B，A都是可以信任的。这里来打个比方，假设军队中的每个士兵都只认识自己的直接上级，那么这时候总司令怎么确认某个士兵是自己部队 当中的呢？总司令（CA）会问的直接下级（D），而司令的直接下级又会找自己的直接下级，依次往下找…如果最后能找到这个士兵直属上级，那就说明这个士兵是该部队当中的。</p>
+</blockquote>
+<p>附：证书有多种格式</p>
+<ul>
+<li><p>x.509<br>x.509证书通常用于包含一个公钥</p>
+</li>
+<li><p>PKCS12<br> PKCS12证书通常用来包含一个私钥。因此，PKCS12需要密码才能打开。</p>
+</li>
+</ul>
+<h2 id="Https"><a href="#Https" class="headerlink" title="Https"></a>Https</h2><p>现在我们来了解https部分。Https（http over ssl）包含上面提到的加密和证书两部分，被设计用来在Internet安全进行通信。</p>
+<h3 id="如何安全的通信？"><a href="#如何安全的通信？" class="headerlink" title="如何安全的通信？"></a>如何安全的通信？</h3><p>如何安全通信呢？对称加密是我们最先想到的方案：将数据进行加密，然后将加密过的数据和密钥同时传到服务器，服务器使用这个密钥解密加密过后的数据。</p>
+<p><img src="https://i.imgur.com/9rUcGsD.png" srcset="/img/loading.gif" alt="mage-20180708125333"></p>
+<p>现在，我们来看看这种可能的场景：黑客截获了该通信，这意味着黑客拥有了密钥和密文。一旦黑客有了密钥，那么解密密文就是很简单的事情了，我们的数据就这样泄漏了。</p>
+<h3 id="如何使用非对称加密？"><a href="#如何使用非对称加密？" class="headerlink" title="如何使用非对称加密？"></a>如何使用非对称加密？</h3><p>上面的解决方案非常不安全。我们继续往下看。使用非对称加密怎么样？</p>
+<p>这个想法非常棒：服务端发送给你公钥，你使用这个公钥加密数据。因为服务端是唯一拥有私钥的，<br>这意味着只有服务端能够解密密文。即使黑客截获了该通讯，但因为没有私钥也就无法解密密文。</p>
+<p>但是，非对称加密比对称加密更加耗时。为了用户体验，不建议使用非对称加密这种方式来加密/解密大量的数据<br>。</p>
+<h3 id="最终方案"><a href="#最终方案" class="headerlink" title="最终方案"></a>最终方案</h3><p>前两种方案都无法解决我们安全通信，我们怎么结合上面的两种方案呢？来看看最终方案：</p>
+<p><img src="https://i.imgur.com/Qc1qOok.jpg" srcset="/img/loading.gif" alt="ttp"></p>
+<p>上面这张图片已经清楚的展示了HTTPS工作的流程。</p>
+<p>1.[Server]生成一对密钥：公钥和私钥，我们称之为“KeyPub”，“KeyPri”<br>2.[Server]服务端将公钥（KeyPub）发送到客户端<br>3.[Client]生成一个对称密钥（姑且称之为key2），然后用key2加密数据。<br>4.[Client]使用公钥（KeyPub）加密key2.这时，key2是安全的，因为只有服务度有私钥KeyPri<br>5.[Client]发送用key2加密后的信息及用KeyPub加密过的key2到服务端<br>6.[Server]服务端使用KeyPri解密得到加密过的key2，得到真正的key2<br>7.[Server]使用key2解密消息正文。这样，数据就被安全的传输到了服务端。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>由于对称加密比非对称加密快，https决定使用对称加密来加密数据，使用非对称加密对称加密生成的密钥，以确保安全。</p>
+<p>这篇文章最后并没有很好的说明证书的作用，因此如果你以前没了解过，到此可能产生一些困惑，后面我会再单独写一篇文章来说明下。</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Https/">Https</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%8A%A0%E5%AF%86/">加密</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2016/09/21/JDK1.8%E4%B9%8BHashMap%E5%93%88%E5%B8%8C%E6%95%B0%E7%BB%84%E5%AE%B9%E9%87%8F%E7%AE%97%E6%B3%95/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">HashMap之哈希数组容量计算</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2016/07/21/%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90AIL%E8%AF%AD%E8%A8%80%E5%8F%8Ainit.rc%E6%96%87%E4%BB%B6/">
+                        <span class="hidden-mobile">深入分析AIL语言及init.rc</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Https简易工作原理&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

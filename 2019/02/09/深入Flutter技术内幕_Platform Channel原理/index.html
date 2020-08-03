@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>深入Flutter技术内幕:Platform Channel设计与实现(一) - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2019-02-09 21:20">
+                    2019年2月9日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    8.2k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    111
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>Flutter作为一个灵活的UI框架,引入Platform Channel机制来支持不同平台的API调用,无论是Android上的由Java或Kotlin开发的API,还是IOS上用Objective-C或Swift开发API.需要注意的是Platform Channel不依赖代码生成,而是建立在消息传递方式上.实际上,它的工作模式和原理非常类似基于二进制协议开发的网络服务,在下文中,我们会对此有更深的理解与体会.</p>
+<h1 id="Platform-Channel简介"><a href="#Platform-Channel简介" class="headerlink" title="Platform Channel简介"></a>Platform Channel简介</h1><p>在Flutter中,提供了三种Platform Channel用来支持和平台之间数据的传递:</p>
+<ul>
+<li>BasicMessageChannel: 支持字符串和半结构化的数据传递</li>
+<li>MethodChannel: 支持方法调用,既可以从Flutter发平台发起方法调用,也可以从平台代码向Flutter发起调用</li>
+<li>EventChannel: 支持数据流通信</li>
+</ul>
+<p>这三种Platform Channel分别用不同的作用,但在设计上大同小异,他们都有以下三个成员变量:</p>
+<ul>
+<li>name:表示Channel名字,每个Channel使用唯一的name作为其唯一标志</li>
+<li>messager:信使,是消息的发送和接受工具</li>
+<li>codec: 表示消息的编解码器,目前有MethodCodec和MessageCodec两种类型</li>
+</ul>
+<h2 id="Platform-Channel基本结构"><a href="#Platform-Channel基本结构" class="headerlink" title="Platform Channel基本结构"></a>Platform Channel基本结构</h2><p>为了对这三种Platform Channel有个比较感性的认识,通过以下简化过的代码来熟悉它们的结构.比较熟悉的同学可以直接跳过此章节.</p>
+<h3 id="BasicMessageChannel"><a href="#BasicMessageChannel" class="headerlink" title="BasicMessageChannel"></a>BasicMessageChannel</h3><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BasicMessageChannel</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> BinaryMessenger messenger;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String name;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MessageCodec&lt;T&gt; codec;
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setMessageHandler</span><span class="hljs-params">(<span class="hljs-keyword">final</span> MessageHandler&lt;T&gt; handler)</span> </span>&#123;
+        messenger.setMessageHandler(name,
+            handler == <span class="hljs-keyword">null</span> ? <span class="hljs-keyword">null</span> : <span class="hljs-keyword">new</span> IncomingMessageHandler(handler));
+    &#125;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MessageHandler</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(T message, Reply&lt;T&gt; reply)</span></span>;
+    &#125;
+    
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IncomingMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessageHandler</span> </span>&#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MessageHandler&lt;T&gt; handler;
+
+        <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">IncomingMessageHandler</span><span class="hljs-params">(MessageHandler&lt;T&gt; handler)</span> </span>&#123;
+            <span class="hljs-keyword">this</span>.handler = handler;
+        &#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(ByteBuffer message, <span class="hljs-keyword">final</span> BinaryReply callback)</span> </span>&#123;
+            ......
+            handler.onMessage();
+            ......
+        &#125;
+    &#125;         
+&#125;</code></pre>
+
+<h3 id="MethodChannel"><a href="#MethodChannel" class="headerlink" title="MethodChannel"></a>MethodChannel</h3><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> BinaryMessenger messenger;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String name;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MethodCodec codec;
+    
+    ......
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setMethodCallHandler</span><span class="hljs-params">(<span class="hljs-keyword">final</span> @Nullable MethodCallHandler handler)</span> </span>&#123;
+        messenger.setMessageHandler(name,
+            handler == <span class="hljs-keyword">null</span> ? <span class="hljs-keyword">null</span> : <span class="hljs-keyword">new</span> IncomingMethodCallHandler(handler));
+    &#125;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Result</span> </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">success</span><span class="hljs-params">(@Nullable Object result)</span></span>;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">error</span><span class="hljs-params">(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails)</span></span>;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">notImplemented</span><span class="hljs-params">()</span></span>;
+    &#125;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MethodCallHandler</span> </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onMethodCall</span><span class="hljs-params">(MethodCall call, Result result)</span></span>;
+    &#125;
+    
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IncomingMethodCallHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessageHandler</span> </span>&#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MethodCallHandler handler;
+
+        IncomingMethodCallHandler(MethodCallHandler handler) &#123;
+            <span class="hljs-keyword">this</span>.handler = handler;
+        &#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(ByteBuffer message, <span class="hljs-keyword">final</span> BinaryReply reply)</span> </span>&#123;
+            ......
+            handler.onMethodCall();
+            ......
+        &#125;
+    &#125;     
+&#125;</code></pre>
+
+<h3 id="EventChannel"><a href="#EventChannel" class="headerlink" title="EventChannel"></a>EventChannel</h3><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">EventChannel</span> </span>&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> BinaryMessenger messenger;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String name;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MethodCodec codec;
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setStreamHandler</span><span class="hljs-params">(<span class="hljs-keyword">final</span> StreamHandler handler)</span> </span>&#123;
+        messenger.setMessageHandler(name, handler == <span class="hljs-keyword">null</span> ? <span class="hljs-keyword">null</span> : <span class="hljs-keyword">new</span> IncomingStreamRequestHandler(handler));
+    &#125;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">StreamHandler</span> </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onListen</span><span class="hljs-params">(Object arguments, EventSink events)</span></span>;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onCancel</span><span class="hljs-params">(Object arguments)</span></span>;
+    &#125;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">EventSink</span> </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">success</span><span class="hljs-params">(Object event)</span></span>;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">error</span><span class="hljs-params">(String errorCode, String errorMessage, Object errorDetails)</span></span>;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">endOfStream</span><span class="hljs-params">()</span></span>;
+    &#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IncomingStreamRequestHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessageHandler</span> </span>&#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> StreamHandler handler;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AtomicReference&lt;EventSink&gt; activeSink = <span class="hljs-keyword">new</span> AtomicReference&lt;&gt;(<span class="hljs-keyword">null</span>);
+
+        IncomingStreamRequestHandler(StreamHandler handler) &#123;
+            <span class="hljs-keyword">this</span>.handler = handler;
+        &#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(ByteBuffer message, <span class="hljs-keyword">final</span> BinaryReply reply)</span> </span>&#123;
+            ......
+            handler.onCancel();
+            ......
+            handler.onListen();   
+            ......
+        &#125;
+    &#125;
+&#125;</code></pre>
+
+<h2 id="name-Channel名称"><a href="#name-Channel名称" class="headerlink" title="name(Channel名称)"></a>name(Channel名称)</h2><p>name是用于区分不同Platform Channel的唯一标志.在一个Flutter应用中,通常会存在多个Platform Channel,不同Channel之间通过name那么来区分.比如在使用MethodChannel平台发起方法调用时,需要为MethodChannel指定对应的name.</p>
+<h2 id="messager-信使"><a href="#messager-信使" class="headerlink" title="messager(信使)"></a>messager(信使)</h2><p>messager也称为信使,通俗来说信使就是现代的快递员,它负责把数据从Flutter搬运到JAndroid/IOS平台,或者从Android/IOS搬运到Flutter).对于Flutter中的三种Channel,尽管各自用途不同,但messager都是BinaryMessager.</p>
+<p>当我们创建一个Channel时,并为其设置消息处理器时,最终会为该Channel绑定一个BinaryMessagerHandler.并以Channel的name为key,保存在Map结构中.当接受到发送消息后,会根据消息中携带的channel名称取出对应BinaryMessagerHandler,并交由其处理.在Android平台中,BinaryMessenger是一个接口,其实现类是FlutterNativeView.在后续<a href="#BinaryMessenger">MethodChannel</a>调用原理中,会进一步分析.</p>
+<h2 id="Codec-编解码器"><a href="#Codec-编解码器" class="headerlink" title="Codec(编解码器)"></a>Codec(编解码器)</h2><p>在Platform Channel中,messager携带的数据需要在Dart层,Native层以及Android/IOS平台中传输,需要考虑一种与平台无关的数据协议,且又能支持图片/文件等资源,因此官方最终采用了二进制字节流作为数据传输协议:发送方需要把数据编码成二进制数据,接受方再把数据解码成原始数据.而负责编解码操作的就是Codec.</p>
+<p>在Flutter中有两种Codec:</p>
+<ul>
+<li>MethodCodec: 用于对MethodCall编解码</li>
+<li>MessageCodec: 用于对Message进行编解码</li>
+</ul>
+<h3 id="MessageCodec"><a href="#MessageCodec" class="headerlink" title="MessageCodec"></a>MessageCodec</h3><p>MessageCodec用于二进制数据与基础数据之间的编解码,其中BasicMessageChannel中采用的就是该Codec.以Android平台为例,MessageCodec定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MessageCodec</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;
+    <span class="hljs-comment">// 将指定的类型message编码为二进制数据ByteBuffer</span>
+    <span class="hljs-function">ByteBuffer <span class="hljs-title">encodeMessage</span><span class="hljs-params">(T message)</span></span>;
+    <span class="hljs-comment">// 将二进制数据ByteBuffer解码成指定类型</span>
+    <span class="hljs-function">T <span class="hljs-title">decodeMessage</span><span class="hljs-params">(ByteBuffer message)</span></span>;
+&#125;</code></pre>
+
+<p>MessageCodec被设计为一个泛型接口,用于实现二进制数据ByteBuffer和不同类型数据之间的转换.(在IOS中,可参考FlutterMessageCodec协议,其原理基本一致).</p>
+<p>在Flutter中,目前MessageCodec有多种实现:</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNc79ly1g00gywsky2j32dx0u0wxl.jpg" srcset="/img/loading.gif" alt="image-20190209205941331"></p>
+<h4 id="BinaryCodec"><a href="#BinaryCodec" class="headerlink" title="BinaryCodec"></a>BinaryCodec</h4><p>用于二进制数据和二进制数据之间的编解码,在实现上什么也没有做,只是原封不动的将二进制数据返回而已.</p>
+<h4 id="StringCodec"><a href="#StringCodec" class="headerlink" title="StringCodec"></a>StringCodec</h4><p>用于字符串与二进制数据之间的编解码,对于字符串采用UTF-8编码格式.</p>
+<h4 id="JSONMessageCodec"><a href="#JSONMessageCodec" class="headerlink" title="JSONMessageCodec"></a>JSONMessageCodec</h4><p>用于数据类型与二进制数据之间的编解码,支持基础数据类型(boolean,char,double,float,int,long,short,String)以及List,Map.在Android端使用<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8/-/blob/shell/platform/android/io/flutter/plugin/common/JSONUtil.java?utm_source=share#L25" target="_blank" rel="noopener">JSONUtil</a>和StringCodec作为序列化和反序列化工具.</p>
+<h4 id="StandardMessageCodec"><a href="#StandardMessageCodec" class="headerlink" title="StandardMessageCodec"></a>StandardMessageCodec</h4><p>用于数据类型和二进制数据之间的编解码,它也是BasicMessageChannel中默认使用的编解码器,支持基础数据类型(boolean,char,double,float,int,long,short,String),List,Map以及二进制数据,更多参见:<a href="#深入编解码器原理">深入编解码器原理</a></p>
+<h3 id="MethodCodec"><a href="#MethodCodec" class="headerlink" title="MethodCodec"></a>MethodCodec</h3><p>MethodCodec用于二进制数据与方法调用(MethodCall)和返回结果之间的编解码.MethodChannel和EventChannel所使用的编解码器均为MethodCodec.以Android平台为例,MethodCodec定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MethodCodec</span> </span>&#123;
+    <span class="hljs-comment">// 将methodCall编码为二进制ByteBuffer</span>
+    <span class="hljs-function">ByteBuffer <span class="hljs-title">encodeMethodCall</span><span class="hljs-params">(MethodCall methodCall)</span></span>;
+
+    <span class="hljs-comment">// 将二进制methodCall解码为MethodCall</span>
+    <span class="hljs-function">MethodCall <span class="hljs-title">decodeMethodCall</span><span class="hljs-params">(ByteBuffer methodCall)</span></span>;
+
+    <span class="hljs-comment">// 将正常响应结果result编码为二进制ByteBuffer</span>
+    <span class="hljs-function">ByteBuffer <span class="hljs-title">encodeSuccessEnvelope</span><span class="hljs-params">(Object result)</span></span>;
+
+    <span class="hljs-comment">// 将错误响应提示编码为二进制ByteBuffer</span>
+    <span class="hljs-function">ByteBuffer <span class="hljs-title">encodeErrorEnvelope</span><span class="hljs-params">(String errorCode, String errorMessage, Object errorDetails)</span></span>;
+
+    <span class="hljs-comment">// 将二进制数据ByteBuffer解码成Object</span>
+    <span class="hljs-function">Object <span class="hljs-title">decodeEnvelope</span><span class="hljs-params">(ByteBuffer envelope)</span></span>;
+&#125;</code></pre>
+
+<p>一个MethodCall对象代表一次从Flutter端发起的方法调用,对于方法调用而言,涉及方法名,方法参数以及方法返回结果,因此和MessageCodec相比,MethodCodec中多了两个处理调用结果的方法:</p>
+<ul>
+<li>方法调用成功,使用<code>encodeSuccessEnvelope()</code>编码result</li>
+<li>方法调用失败,使用<code>encodeErrorEnvelope()</code>编码errorCode,errorMessage,errorDetail</li>
+</ul>
+<blockquote>
+<p><code>decodeEnvelope()</code>方法则用于解码平台代码调用Dart中方法的结果.比如Android平台通过MethodChannel调用Flutter中的方法,且获取其返回结果</p>
+</blockquote>
+<p>在Flutter中,目前MethodCodec有两种实现:</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNc79ly1g00bceb3z0j316c0nan01.jpg" srcset="/img/loading.gif" alt="image-20190209174504635"></p>
+<h4 id="JSONMethodCodec"><a href="#JSONMethodCodec" class="headerlink" title="JSONMethodCodec"></a>JSONMethodCodec</h4><p>JSONMethodCodec编解码器依赖于JSONMessageCodec.在将MethodCall对象进行编码时,会首先将该对象转成JSON对象:{“method”:method,”args”:args},比如当前想要调用某个Channel的<code>setVolum(5)</code>,其对应的MethodCall被被转成<code>{&quot;method&quot;:&quot;setVolum&quot;,&quot;args&quot;:{&quot;volum&quot;:5}}</code>,接下来使用JSONMessageCodec将其编码为二进制数据.</p>
+<h4 id="StandardMethodCodec"><a href="#StandardMethodCodec" class="headerlink" title="StandardMethodCodec"></a>StandardMethodCodec</h4><p>StandardMethodCodec的编解码器依赖于StandardMessageCodec,它也是MethodCodec的默认实现.当其编码在将MethodCall对象进行编码时,会将MethoCall对象的method和args依次使用StandardMessageCodec进行编码,然后写成二进制数据.</p>
+<h3 id="深入编解码器原理"><a href="#深入编解码器原理" class="headerlink" title="深入编解码器原理"></a>深入编解码器原理</h3><p>在学习编写Platform Channel过程中,Flutter官方介绍了如何借助MethodChannel编写获取Android/IOS平台上的<a href="https://flutterchina.club/platform-channels/" target="_blank" rel="noopener">电量插件</a>.在Android平台中电量返回值是java.lang.Integer类型,而IOS平台中电量返回值是NSNumber类型,而在Dart中,该返回值类型是dart语言中的int类型.下面以Android平台为例,通过分析StandardMethodCodec实现来了解其原理.</p>
+<p>上面我们已经说过StandardMethodCodec中使用标准的二进制消息编码器StandardMessageCodec,首先来看一下StandardMethodCodec的定义:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">StandardMethodCodec</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">MethodCodec</span> </span>&#123;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> StandardMethodCodec INSTANCE = <span class="hljs-keyword">new</span> StandardMethodCodec(StandardMessageCodec.INSTANCE);
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> StandardMessageCodec messageCodec;
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">StandardMethodCodec</span><span class="hljs-params">(StandardMessageCodec messageCodec)</span> </span>&#123;
+      <span class="hljs-keyword">this</span>.messageCodec = messageCodec;
+    &#125;
+    
+    .......
+    
+&#125;</code></pre>
+
+<p>现在重点分析StandardMessageCodec:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">StandardMessageCodec</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">MessageCodec</span>&lt;<span class="hljs-title">Object</span>&gt; </span>&#123;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> StandardMessageCodec INSTANCE = <span class="hljs-keyword">new</span> StandardMessageCodec();
+    
+    <span class="hljs-comment">// 字节序判断,LITTLE_ENDIAN为true表示是小端模式,否则为大端模式.在对字节流写入和读取时,</span>
+    <span class="hljs-comment">// 需要根据字节序来决定读取和写入的顺序</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> LITTLE_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Charset UTF8 = Charset.forName(<span class="hljs-string">"UTF8"</span>);
+    <span class="hljs-comment">// 下面14个常量值用来标志不同类型的数据,比如0表示NULL,3表示int类型.在向字节流写入指定类型</span>
+    <span class="hljs-comment">// 的数据时,需要首先写入类型标志,然后紧跟着写入具体的值;在从字节流读取数据时,首先读取类型标</span>
+    <span class="hljs-comment">// 志,然后读取具体的数值.</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> NULL = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> TRUE = <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> FALSE = <span class="hljs-number">2</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> INT = <span class="hljs-number">3</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> LONG = <span class="hljs-number">4</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> BIGINT = <span class="hljs-number">5</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> DOUBLE = <span class="hljs-number">6</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> STRING = <span class="hljs-number">7</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> BYTE_ARRAY = <span class="hljs-number">8</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> INT_ARRAY = <span class="hljs-number">9</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> LONG_ARRAY = <span class="hljs-number">10</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> DOUBLE_ARRAY = <span class="hljs-number">11</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> LIST = <span class="hljs-number">12</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> MAP = <span class="hljs-number">13</span>;
+
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> ByteBuffer <span class="hljs-title">encodeMessage</span><span class="hljs-params">(Object message)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (message == <span class="hljs-keyword">null</span>) &#123;
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;
+        &#125;
+        <span class="hljs-keyword">final</span> ExposedByteArrayOutputStream stream = <span class="hljs-keyword">new</span> ExposedByteArrayOutputStream();
+        <span class="hljs-comment">// 将message写入二进制字节流中</span>
+        writeValue(stream, message);
+        <span class="hljs-keyword">final</span> ByteBuffer buffer = ByteBuffer.allocateDirect(stream.size());
+        buffer.put(stream.buffer(), <span class="hljs-number">0</span>, stream.size());
+        <span class="hljs-keyword">return</span> buffer;
+    &#125;
+    
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">decodeMessage</span><span class="hljs-params">(ByteBuffer message)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (message == <span class="hljs-keyword">null</span>) &#123;
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;
+        &#125;
+        message.order(ByteOrder.nativeOrder());
+        <span class="hljs-comment">// 从二进制字节流message中读取数据</span>
+        <span class="hljs-keyword">final</span> Object value = readValue(message);
+        <span class="hljs-keyword">if</span> (message.hasRemaining()) &#123;
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"Message corrupted"</span>);
+        &#125;
+        <span class="hljs-keyword">return</span> value;
+    &#125;
+    
+    <span class="hljs-comment">// 根据数据类型,先向stream中写入类型标志值,及上述提到的14个常量值,然后将具体的</span>
+    <span class="hljs-comment">// value值转成byte继续写入到stream</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">writeValue</span><span class="hljs-params">(ByteArrayOutputStream stream, Object value)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (value == <span class="hljs-keyword">null</span>) &#123;
+            stream.write(NULL);
+        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value == Boolean.TRUE) &#123;
+            stream.write(TRUE);
+        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value == Boolean.FALSE) &#123;
+            stream.write(FALSE);
+        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value <span class="hljs-keyword">instanceof</span> Number) &#123;
+            <span class="hljs-keyword">if</span> (value <span class="hljs-keyword">instanceof</span> Integer || value <span class="hljs-keyword">instanceof</span> Short || value <span class="hljs-keyword">instanceof</span> Byte) &#123;         <span class="hljs-comment">// 1.写入类型标志值</span>
+                stream.write(INT);
+                <span class="hljs-comment">// value转为byte,继续写入到stream中</span>
+                writeInt(stream, ((Number) value).intValue());
+            &#125;
+            .......
+        &#125;<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value <span class="hljs-keyword">instanceof</span> String) &#123;
+            stream.write(STRING);
+            writeBytes(stream, ((String) value).getBytes(UTF8));
+        &#125;
+        .......
+    &#125;
+    
+    <span class="hljs-comment">// 根据字节序决定写入顺序</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">writeInt</span><span class="hljs-params">(ByteArrayOutputStream stream, <span class="hljs-keyword">int</span> value)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (LITTLE_ENDIAN) &#123;
+            stream.write(value);
+            stream.write(value &gt;&gt;&gt; <span class="hljs-number">8</span>);
+            stream.write(value &gt;&gt;&gt; <span class="hljs-number">16</span>);
+            stream.write(value &gt;&gt;&gt; <span class="hljs-number">24</span>);
+        &#125; <span class="hljs-keyword">else</span> &#123;
+            stream.write(value &gt;&gt;&gt; <span class="hljs-number">24</span>);
+            stream.write(value &gt;&gt;&gt; <span class="hljs-number">16</span>);
+            stream.write(value &gt;&gt;&gt; <span class="hljs-number">8</span>);
+            stream.write(value);
+        &#125;
+    &#125;
+    
+    <span class="hljs-comment">// writeValue()方法反向过程,原理一致</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> Object <span class="hljs-title">readValue</span><span class="hljs-params">(ByteBuffer buffer)</span> </span>&#123;
+        .......
+    &#125;
+    
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ExposedByteArrayOutputStream</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ByteArrayOutputStream</span> </span>&#123;
+        <span class="hljs-keyword">byte</span>[] buffer() &#123;
+            <span class="hljs-keyword">return</span> buf;
+        &#125;
+    &#125;
+&#125;</code></pre>
+
+<p>在StandardMessageCodec中最重要的两个方法是<code>writeValue()</code>和<code>readValue()</code>.前者用于将value值写入到字节输出流ByteArrayOutputStream中,后者从字节缓冲数组中读取.在Android返回电量的过程中,假设电量值为100,该值转换成二进制数据流程为:首先向字节流stream中写入表示int类型的标志值3,再将100转为4个byte,继续写入到字节流stream中.当Dart中接受到该二进制数据后,先读取第一个byte值,根据此值得知后面需要读取一个int类型的数据,随后读取后面4个byte,并将其转为dart类型中int类型.</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNc79ly1g00epfqv0vj31zk0pyae9.jpg" srcset="/img/loading.gif" alt="image-20190209194123776"></p>
+<h1 id="Handler"><a href="#Handler" class="headerlink" title="Handler"></a>Handler</h1><p>Flutter中定义了一套Handler用于处理经过Codec解码后消息.在使用Platform Channel时,需要为其设置对应的Handler,实际上就是为其注册一个对应BinaryMessageHandler,二进制数据会被BinaryMessageHanler进行处理,首先使用Codec进行解码操作,然后再分发给具体Handler进行处理.与三种Platform Channel相对应,Flutter中也定义了三种Handler:</p>
+<ul>
+<li>MessageHandler: 用于处理字符串或者半结构化消息,定义在BasicMessageChannel中.</li>
+<li>MethodCallHandler: 用于处理方法调用,定义在MethodChannel中.</li>
+<li>StreamHandler: 用于事件流通信,定义在EventChannel中.</li>
+</ul>
+<h2 id="MessageHandler"><a href="#MessageHandler" class="headerlink" title="MessageHandler"></a>MessageHandler</h2><p>用于处理字符串或者半结构化的消息,其定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BasicMessageChannel</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;
+    ......
+        
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MessageHandler</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(T message, Reply&lt;T&gt; reply)</span></span>;
+    &#125;
+    
+    ......
+&#125;</code></pre>
+
+<p><code>onMessage()</code>用于处理来自Flutter中的消息,该接受两个参数:T类型的消息以及用于异步返回T类型的result</p>
+<h2 id="MethodCallHandler"><a href="#MethodCallHandler" class="headerlink" title="MethodCallHandler"></a>MethodCallHandler</h2><p> MethodCallHandler用于处理方法的调用,其定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+    ......
+        
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MethodCallHandler</span> </span>&#123;
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onMethodCall</span><span class="hljs-params">(MethodCall call, Result result)</span></span>;
+    &#125;
+    
+    ......
+&#125;</code></pre>
+
+<p><code>onMessage()</code>用于处理来自Flutter中消息,该方法接受两个参数:用于方法调用MethodCall对象以及用于方法返回Result类型的对象.</p>
+<h2 id="StreamHandler"><a href="#StreamHandler" class="headerlink" title="StreamHandler"></a>StreamHandler</h2><p> StreamHandler用于事件流的通信,通常是用于平台主动向Flutter发送事件通知,其定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">EventChannel</span> </span>&#123;
+    ......
+        
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">StreamHandler</span> </span>&#123;
+
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onListen</span><span class="hljs-params">(Object arguments, EventSink events)</span></span>;
+
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onCancel</span><span class="hljs-params">(Object arguments)</span></span>;
+    &#125;
+    
+    ......
+&#125;</code></pre>
+
+<p>在StreamHandler存在两个方法:<code>onListen()</code>和<code>onCancel()</code>.当Flutter端开始监听平台事件时,会向平台发起一次MethodCall,其中方法名为listen,也就是最终会调用StreamHandler中的<code>onListen()</code>方法.该方法中接受两个参数,其中EventSink类型的参数可用于向Flutter发送事件(实际上还是通过BinaryMessager).当Flutter开始停止监听平台事件时,会再向平台发起一次MethodCall,其中方法名为cancel,最终会调用StreamHandler的<code>onCancel()</code>方法,在该方法中通常需要销毁一些无用的资源.关于StreamHandler原理,会另开一文.</p>
+<h1 id="MethodChannel调用原理"><a href="#MethodChannel调用原理" class="headerlink" title="MethodChannel调用原理"></a>MethodChannel调用原理</h1><p>MethodChannel用于实现Flutter和Android/IOS平台间的方法调用.下文将以从Flutter调用Android平台代码为主线进行分析,主要涉及方法调用及方法调用结果返回两个过程.</p>
+<h2 id="方法调用"><a href="#方法调用" class="headerlink" title="方法调用"></a>方法调用</h2><h3 id="Dart-gt-Native"><a href="#Dart-gt-Native" class="headerlink" title="Dart -&gt; Native"></a>Dart -&gt; Native</h3><p>MethodChannel定义如下:</p>
+<pre><code class="hljs dart"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+  <span class="hljs-comment">// 构造方法,通常我们只需要指定该channel的name,  </span>
+  <span class="hljs-keyword">const</span> MethodChannel(<span class="hljs-keyword">this</span>.name, [<span class="hljs-keyword">this</span>.codec = <span class="hljs-keyword">const</span> StandardMethodCodec()]);
+  <span class="hljs-comment">// name作为通道的唯一标志付,用于区分不同的通道调用</span>
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> name;
+  <span class="hljs-comment">// 用于方法调用过程的编码 </span>
+  <span class="hljs-keyword">final</span> MethodCodec codec;
+  
+  <span class="hljs-comment">// 用于发起异步平台方法调用,需要指定方法名,以及可选方法参数  </span>
+  Future&lt;<span class="hljs-built_in">dynamic</span>&gt; invokeMethod(<span class="hljs-built_in">String</span> method, [<span class="hljs-built_in">dynamic</span> arguments]) <span class="hljs-keyword">async</span> &#123;
+    <span class="hljs-keyword">assert</span>(method != <span class="hljs-keyword">null</span>);
+    <span class="hljs-comment">// 将一次方法调用中需要的方法名和方法参数封装为MethodCall对象,然后使用MethodCodec对该</span>
+    <span class="hljs-comment">//  对象进行进行编码操作,最后通过BinaryMessages中的send方法发起调用 </span>
+    <span class="hljs-keyword">final</span> <span class="hljs-built_in">dynamic</span> result = <span class="hljs-keyword">await</span> BinaryMessages.send(
+      name,
+      codec.encodeMethodCall(MethodCall(method, arguments)),
+    );
+    <span class="hljs-keyword">if</span> (result == <span class="hljs-keyword">null</span>)
+      <span class="hljs-keyword">throw</span> MissingPluginException(<span class="hljs-string">'No implementation found for method <span class="hljs-subst">$method</span> on channel <span class="hljs-subst">$name</span>'</span>);
+    <span class="hljs-keyword">return</span> codec.decodeEnvelope(result);
+  &#125;
+&#125;</code></pre>
+
+<p>在使用MethodChannel时,需要我们根据Channel名称来创建MethodChannel对象.Channel名称作为MethodChannel的唯一标识符,用于区分不同的MethodChannel对象.创建MethodChannel对象的一般方式如下:</p>
+<pre><code class="hljs dart"><span class="hljs-keyword">final</span> MethodChannel _channel = <span class="hljs-keyword">new</span> MethodChannel(<span class="hljs-string">'flutter.io/player'</span>)</code></pre>
+
+<p>拿到MethodChannel对象后,通过调用其<code>invokeMethod()</code>方法用于向平台发起一次调用.在<code>invokeMethod()</code>方法中会将一次方法调中的方法名method和方法参数arguments封装为MethodCall对象,然后使用MethodCodec对其进行二进制编码,最后通过BinaryMessages的send()发起平台方法调用请求.</p>
+<pre><code class="hljs dart"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BinaryMessages</span> </span>&#123;
+   ...... 
+   <span class="hljs-keyword">static</span> Future&lt;ByteData&gt; send(<span class="hljs-built_in">String</span> channel, ByteData message) &#123;
+    <span class="hljs-keyword">final</span> _MessageHandler handler = _mockHandlers[channel];
+    <span class="hljs-comment">// 在没有设置Mock Handler的情况下,继续调用_sendPlatformMessage()   </span>
+    <span class="hljs-keyword">if</span> (handler != <span class="hljs-keyword">null</span>)
+      <span class="hljs-keyword">return</span> handler(message);
+    <span class="hljs-keyword">return</span> _sendPlatformMessage(channel, message);
+  &#125; 
+ 
+   <span class="hljs-keyword">static</span> Future&lt;ByteData&gt; _sendPlatformMessage(<span class="hljs-built_in">String</span> channel, ByteData message) &#123;
+    <span class="hljs-keyword">final</span> Completer&lt;ByteData&gt; completer = Completer&lt;ByteData&gt;();   
+    ui.<span class="hljs-built_in">window</span>.sendPlatformMessage(channel, message, (ByteData reply) &#123;
+      <span class="hljs-keyword">try</span> &#123;
+        completer.complete(reply);
+      &#125; <span class="hljs-keyword">catch</span> (exception, stack) &#123;
+        FlutterError.reportError(FlutterErrorDetails(
+          exception: exception,
+          stack: stack,
+          <span class="hljs-keyword">library</span>: <span class="hljs-string">'services library'</span>,
+          context: <span class="hljs-string">'during a platform message response callback'</span>,
+        ));
+      &#125;
+    &#125;);
+    <span class="hljs-keyword">return</span> completer.future;
+  &#125; 
+   ......  
+&#125;</code></pre>
+
+<p>BinaryMessages类中提供了用于发送和接受平台插件的二进制消息.</p>
+<pre><code class="hljs dart"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Window</span></span>&#123;
+    ......
+    <span class="hljs-keyword">void</span> sendPlatformMessage(<span class="hljs-built_in">String</span> name,
+                           ByteData data,
+                           PlatformMessageResponseCallback callback) &#123;
+    <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> error =
+        _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
+    <span class="hljs-keyword">if</span> (error != <span class="hljs-keyword">null</span>)
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Exception(error);
+  &#125;
+  <span class="hljs-comment">// 和Java类似,Dart中同样提供了Native方法用于调用底层C++/C代码的能力  </span>
+  <span class="hljs-built_in">String</span> _sendPlatformMessage(<span class="hljs-built_in">String</span> name,
+                              PlatformMessageResponseCallback callback,
+                              ByteData data) native <span class="hljs-string">'Window_sendPlatformMessage'</span>;
+   ....... 
+&#125;</code></pre>
+
+<p> 上述过程最终会调用到ui.Window的<code>_sendPlatformMessage()</code>方法,该方法是一个native方法,这与Java中JNI技术非常类似.</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g000dx3s0fj31rl0u078i.jpg" srcset="/img/loading.gif" alt="image-20190209112548889"></p>
+<p>在调用该Native方法中,我们向native层发送了三个参数：</p>
+<ul>
+<li>name: String类型,代表Channel名称</li>
+<li>data: ByteData类型,代表之前封装的二进制数据</li>
+<li>callback: Function类型,用于结果回调</li>
+</ul>
+<p><code>_sendPlatformMessage()</code>具体实现在<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8/-/blob/lib/ui/window/window.cc?utm_source=share#L336:14" target="_blank" rel="noopener">Window.cc</a>中:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">Window::RegisterNatives</span><span class="hljs-params">(tonic::DartLibraryNatives* natives)</span> </span>&#123;
+  natives-&gt;Register(&#123;
+      &#123;<span class="hljs-string">"Window_defaultRouteName"</span>, DefaultRouteName, <span class="hljs-number">1</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_scheduleFrame"</span>, ScheduleFrame, <span class="hljs-number">1</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_sendPlatformMessage"</span>, _SendPlatformMessage, <span class="hljs-number">4</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_respondToPlatformMessage"</span>, _RespondToPlatformMessage, <span class="hljs-number">3</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_render"</span>, Render, <span class="hljs-number">2</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_updateSemantics"</span>, UpdateSemantics, <span class="hljs-number">2</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_setIsolateDebugName"</span>, SetIsolateDebugName, <span class="hljs-number">2</span>, <span class="hljs-literal">true</span>&#125;,
+      &#123;<span class="hljs-string">"Window_reportUnhandledException"</span>, ReportUnhandledException, <span class="hljs-number">2</span>, <span class="hljs-literal">true</span>&#125;,
+  &#125;);
+&#125;</code></pre>
+
+<pre><code class="hljs c++"><span class="hljs-keyword">void</span> _SendPlatformMessage(Dart_NativeArguments args) &#123;
+  <span class="hljs-comment">// 最终调用SendPlatformMessage函数  </span>
+  tonic::DartCallStatic(&amp;SendPlatformMessage, args);
+&#125;</code></pre>
+
+<p><a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/lib/ui/window/window.cc?utm_source=share#L84:13" target="_blank" rel="noopener">SendPlatformMessage()</a>函数定义如下:</p>
+<pre><code class="hljs c++"><span class="hljs-function">Dart_Handle <span class="hljs-title">SendPlatformMessage</span><span class="hljs-params">(Dart_Handle window,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                <span class="hljs-keyword">const</span> <span class="hljs-built_in">std</span>::<span class="hljs-built_in">string</span>&amp; name,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                Dart_Handle callback,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                <span class="hljs-keyword">const</span> tonic::DartByteData&amp; data)</span> </span>&#123;
+  UIDartState* dart_state = UIDartState::Current();
+  <span class="hljs-comment">// 1.只能在main iolate调用平台方法</span>
+  <span class="hljs-keyword">if</span> (!dart_state-&gt;window()) &#123;
+    <span class="hljs-comment">// Must release the TypedData buffer before allocating other Dart objects.</span>
+    data.Release();
+    <span class="hljs-keyword">return</span> tonic::ToDart(
+        <span class="hljs-string">"Platform messages can only be sent from the main isolate"</span>);
+  &#125;
+  <span class="hljs-comment">// 此处response的作用?	</span>
+  fml::RefPtr&lt;PlatformMessageResponse&gt; response;
+  <span class="hljs-keyword">if</span> (!Dart_IsNull(callback)) &#123;
+    response = fml::MakeRefCounted&lt;PlatformMessageResponseDart&gt;(
+        tonic::DartPersistentValue(dart_state, callback),
+        dart_state-&gt;GetTaskRunners().GetUITaskRunner());
+  &#125;
+  <span class="hljs-comment">// 2.核心方法调用 </span>
+  <span class="hljs-keyword">if</span> (Dart_IsNull(data.dart_handle())) &#123;
+    dart_state-&gt;window()-&gt;client()-&gt;HandlePlatformMessage(
+        fml::MakeRefCounted&lt;PlatformMessage&gt;(name, response));
+  &#125; <span class="hljs-keyword">else</span> &#123;
+    <span class="hljs-keyword">const</span> <span class="hljs-keyword">uint8_t</span>* <span class="hljs-built_in">buffer</span> = <span class="hljs-keyword">static_cast</span>&lt;<span class="hljs-keyword">const</span> <span class="hljs-keyword">uint8_t</span>*&gt;(data.data());
+		
+    dart_state-&gt;window()-&gt;client()-&gt;HandlePlatformMessage(
+        fml::MakeRefCounted&lt;PlatformMessage&gt;(
+            name, <span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;<span class="hljs-keyword">uint8_t</span>&gt;(<span class="hljs-built_in">buffer</span>, <span class="hljs-built_in">buffer</span> + data.length_in_bytes()),
+            response));
+  &#125;
+
+  <span class="hljs-keyword">return</span> Dart_Null();
+&#125;</code></pre>
+
+<p>在上方代码中首先判断是否在main isolate中进行平台方法调用,如果不是返回错误信息;接下来就是执行关键的方法:<code>dart_state-&gt;window()-&gt;client()-&gt;HandlePlatformMessage()</code>.其中<code>HandlePlatformMessage()</code>是<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/lib/ui/window/window.h?utm_source=share#L39:7" target="_blank" rel="noopener">WindowClient</a>中虚方法:</p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WindowClient</span> &#123;</span>
+ <span class="hljs-keyword">public</span>:
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-built_in">std</span>::<span class="hljs-built_in">string</span> <span class="hljs-title">DefaultRouteName</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ScheduleFrame</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Render</span><span class="hljs-params">(Scene* scene)</span> </span>= <span class="hljs-number">0</span>;
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">UpdateSemantics</span><span class="hljs-params">(SemanticsUpdate* update)</span> </span>= <span class="hljs-number">0</span>;
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">HandlePlatformMessage</span><span class="hljs-params">(fml::RefPtr&lt;PlatformMessage&gt; message)</span> </span>= <span class="hljs-number">0</span>;
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> FontCollection&amp; <span class="hljs-title">GetFontCollection</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;
+  <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-keyword">void</span> <span class="hljs-title">UpdateIsolateDescription</span><span class="hljs-params">(<span class="hljs-keyword">const</span> <span class="hljs-built_in">std</span>::<span class="hljs-built_in">string</span> isolate_name,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                        <span class="hljs-keyword">int64_t</span> isolate_port)</span> </span>= <span class="hljs-number">0</span>;
+
+ <span class="hljs-keyword">protected</span>:
+  <span class="hljs-keyword">virtual</span> ~WindowClient();
+&#125;;</code></pre>
+
+<p>而<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/runtime/runtime_controller.cc?utm_source=share#L272:6" target="_blank" rel="noopener">RuntimeController</a>是WindowClient中的唯一继承类,其头文件<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/runtime/runtime_controller.h?utm_source=share#L137:33" target="_blank" rel="noopener">runtime_controller.h</a>,为了方便起见,我们只看其部分定义:</p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RuntimeController</span> <span class="hljs-title">final</span> :</span> <span class="hljs-keyword">public</span> WindowClient &#123;
+    ......
+        
+    <span class="hljs-keyword">private</span>:
+      RuntimeDelegate&amp; client_;
+    
+      .......
+      <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HandlePlatformMessage</span><span class="hljs-params">(fml::RefPtr&lt;PlatformMessage&gt; message)</span> <span class="hljs-keyword">override</span></span>;
+      ......
+
+&#125;</code></pre>
+
+<p>知道其定义之后,现在就可以看起具体在<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/runtime/runtime_controller.cc?utm_source=share#L272:25" target="_blank" rel="noopener">runtime_controller.cc</a>的实现了:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">RuntimeController::HandlePlatformMessage</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">    fml::RefPtr&lt;PlatformMessage&gt; message)</span> </span>&#123;
+  client_.HandlePlatformMessage(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(message));
+&#125;</code></pre>
+
+<p>在运行过程中,不同的平台有运行机制不同,需要不同的处理策略,因此RuntimeController中相关的方法实现都被委托到了不同的平台实现类RuntimeDelegate中,即上述代码中<code>client_</code>.</p>
+<p>RuntimeDelegate的实现为Engine,其头文件<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/common/engine.h?utm_source=share" target="_blank" rel="noopener">Engine.h</a>定义如下:</p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Engine</span> <span class="hljs-title">final</span> :</span> <span class="hljs-keyword">public</span> <span class="hljs-built_in">blink</span>::RuntimeDelegate &#123;
+    ........
+&#125;</code></pre>
+
+<p>对应真实的实现在<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/common/engine.cc?utm_source=share#L414:14" target="_blank" rel="noopener">Engine.cc</a>中,直接来看其<code>HandlePlatformMessage()</code>的实现</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">Engine::HandlePlatformMessage</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">    fml::RefPtr&lt;<span class="hljs-built_in">blink</span>::PlatformMessage&gt; message)</span> </span>&#123;
+  <span class="hljs-comment">// kAssetChannel值为flutter/assets  </span>
+  <span class="hljs-keyword">if</span> (message-&gt;channel() == kAssetChannel) &#123;
+    HandleAssetPlatformMessage(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(message));
+  &#125; <span class="hljs-keyword">else</span> &#123;
+    delegate_.OnEngineHandlePlatformMessage(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(message));
+  &#125;
+&#125;</code></pre>
+
+<p>在上述代码过程中,Engine在处理message时,如果该message值等于kAssetChannel,即flutter/assets,表示当前操作想要获取资源,因此会调用<code>HandleAssetPlatformMessage()</code>来走获取资源的逻辑;否则调用<code>delegate_.OnEngineHandlePlatformMessage()</code>方法.这里delegate的具体实现为<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/common/shell.cc?utm_source=share#L723" target="_blank" rel="noopener">Shell</a>:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">Shell::OnEngineHandlePlatformMessage</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">    fml::RefPtr&lt;<span class="hljs-built_in">blink</span>::PlatformMessage&gt; message)</span> </span>&#123;
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()-&gt;RunsTasksOnCurrentThread());
+
+  <span class="hljs-comment">// kSkiaChannel值为flutter/skia  </span>
+  <span class="hljs-keyword">if</span> (message-&gt;channel() == kSkiaChannel) &#123;
+    HandleEngineSkiaMessage(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(message));
+    <span class="hljs-keyword">return</span>;
+  &#125;
+  <span class="hljs-comment">// 其他情况下,向PlatformTaskRunner中添加Task</span>
+  task_runners_.GetPlatformTaskRunner()-&gt;PostTask(
+      [view = platform_view_-&gt;GetWeakPtr(), message = <span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(message)]() &#123;
+        <span class="hljs-keyword">if</span> (view) &#123;
+          view-&gt;HandlePlatformMessage(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(message));
+        &#125;
+      &#125;);
+&#125;</code></pre>
+
+<p><code>OnEngineHandlePlatformMessage</code>在接收到消息后,首先判断要调用Channel是否是flutter/skia,如果是则调用<code>HandleEngineSkiaMessage()</code>进行处理后返回,否则向PlatformTaskRunner添加一个Task,在该Task中会调用PlatformView的<code>HandlePlatformMessage()</code>方法.根据运行平台不同PlatformView有不同的实现,对于Android平台而言,其具体实现是PlatformViewAndroid;对于IOS平台而言,其实现是PlatformViewIOS.</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1fzyuucjellj31020jogmp.jpg" srcset="/img/loading.gif" alt="image-20190208112830510"></p>
+<blockquote>
+<p> Task中的代码执行在Platform Task Runner中,而之前的代码运行在UI Task Runner中</p>
+</blockquote>
+<p>以PlatformViewAndroid为例,来了解<code>HandlePlatformMessage()</code><a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8/-/blob/shell/platform/android/platform_view_android.cc?utm_source=share#L142:27" target="_blank" rel="noopener">方法的实现</a>:</p>
+<pre><code class="hljs c++"><span class="hljs-comment">// |shell::PlatformView|</span>
+<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">PlatformViewAndroid::HandlePlatformMessage</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">    fml::RefPtr&lt;<span class="hljs-built_in">blink</span>::PlatformMessage&gt; message)</span> </span>&#123;
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef&lt;jobject&gt; view = java_object_.<span class="hljs-built_in">get</span>(env);
+  <span class="hljs-keyword">if</span> (view.is_null())
+    <span class="hljs-keyword">return</span>;
+  <span class="hljs-comment">// response_id在Flutter调用平台代码时,会传到平台代码中,后续平台代码需要回传数据时</span>
+  <span class="hljs-comment">// 需要用到它</span>
+  <span class="hljs-keyword">int</span> response_id = <span class="hljs-number">0</span>;
+  <span class="hljs-comment">// 如果message中有response(response类型为PlatformMessageResponseDart),则需要对</span>
+  <span class="hljs-comment">// response_id进行自增  </span>
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">auto</span> response = message-&gt;response()) &#123;
+    response_id = next_response_id_++;
+    <span class="hljs-comment">// pending_responses是一个Map结构  </span>
+    pending_responses_[response_id] = response;
+  &#125;
+  <span class="hljs-keyword">auto</span> java_channel = fml::jni::StringToJavaString(env, message-&gt;channel());
+  <span class="hljs-keyword">if</span> (message-&gt;hasData()) &#123; 
+    fml::<span class="hljs-function">jni::ScopedJavaLocalRef&lt;jbyteArray&gt; <span class="hljs-title">message_array</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">        env, env-&gt;NewByteArray(message-&gt;data().<span class="hljs-built_in">size</span>()))</span></span>;
+    env-&gt;SetByteArrayRegion(
+        message_array.obj(), <span class="hljs-number">0</span>, message-&gt;data().<span class="hljs-built_in">size</span>(),
+        <span class="hljs-keyword">reinterpret_cast</span>&lt;<span class="hljs-keyword">const</span> jbyte*&gt;(message-&gt;data().data()));
+    message = <span class="hljs-literal">nullptr</span>;
+
+    <span class="hljs-comment">// This call can re-enter in InvokePlatformMessageXxxResponseCallback.</span>
+    FlutterViewHandlePlatformMessage(env, view.obj(), java_channel.obj(),
+                                     message_array.obj(), response_id);
+  &#125; <span class="hljs-keyword">else</span> &#123;  
+    message = <span class="hljs-literal">nullptr</span>;
+    <span class="hljs-comment">// This call can re-enter in InvokePlatformMessageXxxResponseCallback.</span>
+    FlutterViewHandlePlatformMessage(env, view.obj(), java_channel.obj(),
+                                     <span class="hljs-literal">nullptr</span>, response_id);
+  &#125;
+&#125;</code></pre>
+
+<p>在上述代码中,当该方法接受PlatformMessage类型的消息时,如果消息中有response,则对response_id自增,并以response_ide为key,response为value存放在变量<code>pending_responses_</code>中(pending_responsed是一个Map结构).</p>
+<blockquote>
+<p>正常情况下,每次从Flutter调用Channel代码,都会生成对应的response_id和response.同时该response_id会被传到平台代码中,当平台代码需要为此次调用返回数据时,需要同时回传该response_id.</p>
+</blockquote>
+<p>接着将消息中的channel和data数据转成Java可识别的数据,并连同response_id一同作为<code>FlutterViewHandlePlatformMessage()</code>方法的参数,最终通过JNI调用的方式传递到Java层.</p>
+<p>简单的分析下该过程,首先来看<code>FlutterViewHandlePlatformMessage()</code>在<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/platform/android/platform_view_android_jni.cc?utm_source=share#L70:6" target="_blank" rel="noopener">platform_android_jni.cc</a>中的实现:</p>
+<pre><code class="hljs c"><span class="hljs-keyword">static</span> jmethodID g_handle_platform_message_method = <span class="hljs-literal">nullptr</span>;
+<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">FlutterViewHandlePlatformMessage</span><span class="hljs-params">(JNIEnv* env,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                      jobject obj,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                      jstring channel,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                      jobject message,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                      jint responseId)</span> </span>&#123;
+  env-&gt;CallVoidMethod(obj, g_handle_platform_message_method, channel, message,
+                      responseId);
+  FML_CHECK(CheckException(env));
+&#125;</code></pre>
+
+<p>在上述方法中,最终将调用g_handle_platform_message_method中指向Java层的方法.其中g_handle_platform_message_method在<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/platform/android/platform_view_android_jni.cc?utm_source=share#L541:6" target="_blank" rel="noopener">RegisterApi</a>中被初始化:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">bool</span> <span class="hljs-title">PlatformViewAndroid::Register</span><span class="hljs-params">(JNIEnv* env)</span> </span>&#123;
+  ......  
+  g_flutter_jni_class = <span class="hljs-keyword">new</span> fml::jni::ScopedJavaGlobalRef&lt;jclass&gt;(
+      env, env-&gt;FindClass(<span class="hljs-string">"io/flutter/embedding/engine/FlutterJNI"</span>));
+    
+  ......
+      
+  <span class="hljs-keyword">return</span> RegisterApi(env);
+&#125;
+
+<span class="hljs-function"><span class="hljs-keyword">bool</span> <span class="hljs-title">RegisterApi</span><span class="hljs-params">(JNIEnv* env)</span> </span>&#123;
+  ......  
+  g_handle_platform_message_method =
+      env-&gt;GetMethodID(g_flutter_jni_class-&gt;obj(), <span class="hljs-string">"handlePlatformMessage"</span>,
+                       <span class="hljs-string">"(Ljava/lang/String;[BI)V"</span>);
+  ......  
+&#125;</code></pre>
+
+<p>不难看出g_flutter_jni_class指向FlutterJNI.java类,g_handle_platform_message_method指向FlutterJN.javaI中的<code>handlePlatformMessage()</code>方法.</p>
+<p>现在我们知道从Flutter发一次Channel调用,需要经过<code>Dart -&gt; Native -&gt; JNI -&gt; Java</code>几个层次,并把三个参数channel,message,responseId传给Java层.</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g000p630c4j31xj0u0wn3.jpg" srcset="/img/loading.gif" alt="image-20190209113644507"></p>
+<h3 id="Native-gt-Java"><a href="#Native-gt-Java" class="headerlink" title="Native -&gt; Java"></a>Native -&gt; Java</h3><p>通过上述分析,我们知道<code>FlutterViewHandlePlatformMessage()</code>实际上是通过JNI的方式最终调用了FlutterJNI.java中的<code>handlePlatformMessage()</code>方法,该方法接受三个来自Native层的参数:</p>
+<ul>
+<li>channel: String类型,表示Channel名称.</li>
+<li>message: 字节数组,表示方法调用中的数据,如方法名和参数.</li>
+<li>replyId: int类型,在将此次调用的响应数据从Java层写回到Native层时用到</li>
+</ul>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FlutterJNI</span> </span>&#123;
+  <span class="hljs-keyword">private</span> PlatformMessageHandler platformMessageHandler;
+    
+      <span class="hljs-meta">@UiThread</span>
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setPlatformMessageHandler</span><span class="hljs-params">(@Nullable PlatformMessageHandler platformMessageHandler)</span> </span>&#123;
+    <span class="hljs-keyword">this</span>.platformMessageHandler = platformMessageHandler;
+  &#125;
+    
+      <span class="hljs-comment">// Called by native.</span>
+  <span class="hljs-meta">@SuppressWarnings</span>(<span class="hljs-string">"unused"</span>)
+  <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">handlePlatformMessage</span><span class="hljs-params">(<span class="hljs-keyword">final</span> String channel, <span class="hljs-keyword">byte</span>[] message, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> replyId)</span> </span>&#123;
+    <span class="hljs-keyword">if</span> (platformMessageHandler != <span class="hljs-keyword">null</span>) &#123;
+      platformMessageHandler.handleMessageFromDart(channel, message, replyId);
+    &#125;
+  &#125;
+&#125;</code></pre>
+
+<p>FlutterJNI类定义了Java层和Flutter C/C++引擎之间的相关接口.此类目前处于实验性质,随着后续的发展可能会被不断的重构和优化,不保证一直存在,不建议开发者调用该类.</p>
+<p>为了建立Android应用和Flutter C/C++引擎的连接,需要创建FlutterJNI实例,然后将其attach到Native,常见的使用方法如下:</p>
+<pre><code class="hljs java"><span class="hljs-comment">// 1.创建FlutterJNI实例</span>
+FlutterJNI flutterJNI = <span class="hljs-keyword">new</span> FlutterJNI();
+<span class="hljs-comment">// 2.建立和Native层的连接</span>
+flutterJNI.attachToNative();
+
+......
+    
+<span class="hljs-comment">// 3.断开和Native层的连接,并释放资源</span>
+flutterJNI.detachFromNativeAndReleaseResources();</code></pre>
+
+<p>重新回到FlutterJNI中<code>handlePlatformMessage()</code>,在该方法中首先判断platformMessageHandler是否为null,不为null,则调用其<code>handleMessageFromDart()</code>方法.其中platformMessageHandler需要通过FlutterJNI中的<code>setPlatformMessageHandler()</code>方法来设置.那该方法被调用的时机是在什么时候呢?直接来看FlutterNativeView的<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/platform/android/io/flutter/view/FlutterNativeView.java?utm_source=share#L39:12" target="_blank" rel="noopener">构造函数</a>:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FlutterNativeView</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessenger</span> </span>&#123;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;String, BinaryMessageHandler&gt; mMessageHandlers;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> mNextReplyId = <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;Integer, BinaryReply&gt; mPendingReplies = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> FlutterPluginRegistry mPluginRegistry;
+    <span class="hljs-keyword">private</span> FlutterView mFlutterView;
+    <span class="hljs-keyword">private</span> FlutterJNI mFlutterJNI;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Context mContext;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> applicationIsRunning;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FlutterNativeView</span><span class="hljs-params">(Context context, <span class="hljs-keyword">boolean</span> isBackgroundView)</span> </span>&#123;
+        mContext = context;
+        mPluginRegistry = <span class="hljs-keyword">new</span> FlutterPluginRegistry(<span class="hljs-keyword">this</span>, context);
+        <span class="hljs-comment">// 创建FlutterJNI实例</span>
+        mFlutterJNI = <span class="hljs-keyword">new</span> FlutterJNI();
+        mFlutterJNI.setRenderSurface(<span class="hljs-keyword">new</span> RenderSurfaceImpl());
+        <span class="hljs-comment">// 将PlatformMessageHandlerImpl实例赋值给FlutterJNI中的platformMessageHandler属性</span>
+        mFlutterJNI.setPlatformMessageHandler(<span class="hljs-keyword">new</span> PlatformMessageHandlerImpl());
+        mFlutterJNI.addEngineLifecycleListener(<span class="hljs-keyword">new</span> EngineLifecycleListenerImpl());
+        attach(<span class="hljs-keyword">this</span>, isBackgroundView);
+        assertAttached();
+        mMessageHandlers = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();
+    &#125;
+    
+    .......
+&#125;</code></pre>
+
+<p>在FlutterNativeView的构造函数中,首先创建FlutterJNI实例mFlutterJNI,然后调用<code>setPlatformMessageHandler()</code>并把PlatformMessageHandlerImpl实例作为参数传入.因此在FlutterJNI的<code>handlePlatformMessage()</code>方法中,最终调用PlatformMessageHandlerImpl实例的<code>handleMessageFromDart()</code>来处理来自Flutter中的消息:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FlutterNativeView</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessenger</span> </span>&#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;String, BinaryMessageHandler&gt; mMessageHandlers;
+    
+    	......
+            
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PlatformMessageHandlerImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">PlatformMessageHandler</span> </span>&#123;
+        <span class="hljs-comment">// Called by native to send us a platform message.</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">handleMessageFromDart</span><span class="hljs-params">(<span class="hljs-keyword">final</span> String channel, <span class="hljs-keyword">byte</span>[] message, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> replyId)</span> </span>&#123;
+			<span class="hljs-comment">// 1.根据channel名称获取对应的BinaryMessageHandler对象.每个Channel对应一个</span>
+            <span class="hljs-comment">// Handler对象</span>
+            BinaryMessageHandler handler = mMessageHandlers.get(channel);
+            <span class="hljs-keyword">if</span> (handler != <span class="hljs-keyword">null</span>) &#123;
+                <span class="hljs-keyword">try</span> &#123;
+                    <span class="hljs-comment">// 2.将字节数组对象封装为ByteBuffer对象</span>
+                    <span class="hljs-keyword">final</span> ByteBuffer buffer = (message == <span class="hljs-keyword">null</span> ? <span class="hljs-keyword">null</span> : ByteBuffer.wrap(message));
+                    <span class="hljs-comment">// 3.调用handler对象的onMessage()方法来分发消息</span>
+                    handler.onMessage(buffer, <span class="hljs-keyword">new</span> BinaryReply() &#123;
+                        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AtomicBoolean done = <span class="hljs-keyword">new</span> AtomicBoolean(<span class="hljs-keyword">false</span>);
+                        <span class="hljs-meta">@Override</span>
+                        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">reply</span><span class="hljs-params">(ByteBuffer reply)</span> </span>&#123;
+                            <span class="hljs-comment">// 4.根据reply的情况,调用FlutterJNI中invokePlatformMessageXXX()方法将响应数据发送给Flutter层</span>
+                            <span class="hljs-keyword">if</span> (reply == <span class="hljs-keyword">null</span>) &#123;
+                                mFlutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
+                            &#125; <span class="hljs-keyword">else</span> &#123;
+                                mFlutterJNI.invokePlatformMessageResponseCallback(replyId, reply, reply.position());
+                            &#125;
+                        &#125;
+                    &#125;);
+                &#125; <span class="hljs-keyword">catch</span> (Exception exception) &#123;
+                    mFlutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
+                &#125;
+                <span class="hljs-keyword">return</span>;
+            &#125;
+            mFlutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
+        &#125;
+&#125;</code></pre>
+
+<p>在FlutterNativeView中存在Map类型的成员变量<span id="BinaryMessenger">mMessageHandler</span>:以Channel名称作为key,以BinaryMessageHandler类型为value.在<code>handleMessageFromDart()</code>方法中,首先根据Channel名称从mMessageHandlers取出对应的二进制消息处理器BinaryMessageHandler,然后将字节数组message封装为ByteBuffer对象,然后调用BinaryMessageHandler实例的<code>onMessage()</code>方法处理ByteBuffer,并进行响应.</p>
+<p>BinaryReply是一个接口,主要用来将ByteBuffer类型的响应数据reply从Java层写回到Flutter层.根据reply是否为null,调用FlutterJNI实例不同的方法:reply为null时,调用<code>invokePlatformMessageEmptyResponseCallback()</code>;否则调用<code>invokePlatformMessageResponseCallback()</code>.关于具体的实现流程,稍后再述.</p>
+<p>现在来看下BinaryMessageHandler是如何添加到mMessageHandler中:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FlutterNativeView</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessenger</span> </span>&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;String, BinaryMessageHandler&gt; mMessageHandlers;
+    
+    ......
+        
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setMessageHandler</span><span class="hljs-params">(String channel, BinaryMessageHandler handler)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (handler == <span class="hljs-keyword">null</span>) &#123;
+            mMessageHandlers.remove(channel);
+        &#125; <span class="hljs-keyword">else</span> &#123;
+            mMessageHandlers.put(channel, handler);
+        &#125;
+    &#125;
+    .......
+&#125;</code></pre>
+
+<p><code>setMessageHandler()</code>方法接受两个参数:channel作为Channel的名称,用来区分不同的Channel;handler是该Channel对应的二进制消息处理器.在该方法中,会根据handler是否为null来决定对mMessageHandlers是进行添加还是删除操作.那该方法什么时候回被调用呢?要想弄明白这个问题,需要了解编写平台Channel的过程.以官方获取Android平台电量的平台Channel为例:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MainActivity</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">FlutterActivity</span> </span>&#123;
+    <span class="hljs-comment">// 1.定义Channel的名称,该名称作为Channel的唯一标识符</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> String CHANNEL = <span class="hljs-string">"samples.flutter.io/battery"</span>;
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onCreate</span><span class="hljs-params">(Bundle savedInstanceState)</span> </span>&#123;
+
+        <span class="hljs-keyword">super</span>.onCreate(savedInstanceState);
+		<span class="hljs-comment">// 2.创建MethodChannel对象channel</span>
+        MethodChannel channel = <span class="hljs-keyword">new</span> MethodChannel(getFlutterView(), CHANNEL);
+        <span class="hljs-comment">// 3.调用MethodChannel实例的setMethodCallHandler()方法为当前channel设置Handler</span>
+        channel.setMethodCallHandler(
+                <span class="hljs-keyword">new</span> MethodCallHandler() &#123;
+                    <span class="hljs-meta">@Override</span>
+                    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMethodCall</span><span class="hljs-params">(MethodCall call, Result result)</span> </span>&#123;
+                        <span class="hljs-comment">// TODO</span>
+                    &#125;
+                &#125;);
+    &#125;
+&#125;</code></pre>
+
+<p>在上述代码中,演示了编写平台代码的基本过程:首先创建MethodChanel实例,然后设置MethodCallHandler.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+    <span class="hljs-comment">// 二进制信使</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> BinaryMessenger messenger;
+    <span class="hljs-comment">// Channel名称</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String name;
+    <span class="hljs-comment">// 方法编码</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MethodCodec codec;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MethodChannel</span><span class="hljs-params">(BinaryMessenger messenger, String name)</span> </span>&#123;
+        <span class="hljs-keyword">this</span>(messenger, name, StandardMethodCodec.INSTANCE);
+    &#125;
+        
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MethodChannel</span><span class="hljs-params">(BinaryMessenger messenger, String name, MethodCodec codec)</span> </span>&#123;
+        <span class="hljs-keyword">assert</span> messenger != <span class="hljs-keyword">null</span>;
+        <span class="hljs-keyword">assert</span> name != <span class="hljs-keyword">null</span>;
+        <span class="hljs-keyword">assert</span> codec != <span class="hljs-keyword">null</span>;
+        <span class="hljs-keyword">this</span>.messenger = messenger;
+        <span class="hljs-keyword">this</span>.name = name;
+        <span class="hljs-keyword">this</span>.codec = codec;
+    &#125;    
+    
+    ......
+        
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setMethodCallHandler</span><span class="hljs-params">(<span class="hljs-keyword">final</span> @Nullable MethodCallHandler handler)</span> </span>&#123;
+        messenger.setMessageHandler(name,
+            handler == <span class="hljs-keyword">null</span> ? <span class="hljs-keyword">null</span> : <span class="hljs-keyword">new</span> IncomingMethodCallHandler(handler));
+    &#125;
+    ......
+&#125;</code></pre>
+
+<p>在创建MethodChannel过程中需要指定三个参数:</p>
+<ul>
+<li>name: Channel名称,用作唯一标识符.</li>
+<li>codec: 用于方法编码的MethodCodec,.默认情况下,codec被指定为StandartMethodCodec.INSTANCE.</li>
+<li>messager: 用于消息发送的BinaryMessager,</li>
+</ul>
+<p>创建完MethodChannel后,接下来需要调用<code>setMethodCallHandler()</code>设置用于处理方法调用MethodCallHandler.在该方法参数handler不为null的情况下,会将该handler包装为IncomingMethodCallHandler实例,然后调用BinaryMessager实例的<code>setMessageHanlder()</code>方法将I该ncomingMethodCallHandler实例保存在FlutterNativeView中的mMessageHandlers中.</p>
+<p>简单来说就是在编写平台Channel时,需要创建对应的MethodChannel实例,并调用其<code>setMethodCallHandler()</code>将MethodCallHandler实例保存起来.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IncomingMethodCallHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BinaryMessageHandler</span> </span>&#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MethodCallHandler handler;
+
+        IncomingMethodCallHandler(MethodCallHandler handler) &#123;
+            <span class="hljs-keyword">this</span>.handler = handler;
+        &#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(ByteBuffer message, <span class="hljs-keyword">final</span> BinaryReply reply)</span> </span>&#123;
+            <span class="hljs-comment">// 1.使用codec对来自Flutter方法调用数据进行解码,并将其封装为MethodCall对象.</span>
+            <span class="hljs-comment">// MethodCall中包含两部分数据:method表示要调用的方法;arguments表示方法所需参数</span>
+            <span class="hljs-keyword">final</span> MethodCall call = codec.decodeMethodCall(message);
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-comment">// 2.调用自定义MethodCallHandler中的onMethodCall方法继续处理方法调用</span>
+                handler.onMethodCall(call, <span class="hljs-keyword">new</span> Result() &#123;
+                    <span class="hljs-meta">@Override</span>
+                    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">success</span><span class="hljs-params">(Object result)</span> </span>&#123;
+                        <span class="hljs-comment">// 调用成功时,需要回传数据给Flutter层时,使用codec对回传数据result</span>
+                        <span class="hljs-comment">// 进行编码</span>
+                        reply.reply(codec.encodeSuccessEnvelope(result));
+                    &#125;
+
+                    <span class="hljs-meta">@Override</span>
+                    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">error</span><span class="hljs-params">(String errorCode, String errorMessage, Object errorDetails)</span> </span>&#123;
+                        <span class="hljs-comment">// 调用失败时,需要回传错误数据给Flutter层时,使用codec对errorCode,</span>
+                        <span class="hljs-comment">// errorMessage,errorDetails进行编码</span>
+                        reply.reply(codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails));
+                    &#125;
+
+                    <span class="hljs-meta">@Override</span>
+                    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">notImplemented</span><span class="hljs-params">()</span> </span>&#123;
+                        <span class="hljs-comment">// 方法没有实现时,调用该方法后,flutter将会受到相应的错误消息</span>
+                        reply.reply(<span class="hljs-keyword">null</span>);
+                    &#125;
+                &#125;);
+            &#125; <span class="hljs-keyword">catch</span> (RuntimeException e) &#123;
+                Log.e(TAG + name, <span class="hljs-string">"Failed to handle method call"</span>, e);
+                reply.reply(codec.encodeErrorEnvelope(<span class="hljs-string">"error"</span>, e.getMessage(), <span class="hljs-keyword">null</span>));
+            &#125;
+        &#125;
+    &#125;
+&#125;</code></pre>
+
+<p>在上述代码中,首先使用codec对来自Flutter层的二进制数据进行解码,并将其封装为MethodCall对象,然后调用MethodCallHandler的<code>onMethodCall()</code>方法.</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNc79ly1g001crq3m8j31p90u0gr6.jpg" srcset="/img/loading.gif" alt="image-20190209115925942"></p>
+<p>.MethodCall中包含两部分数据:method部分表示要调用的方法;arguments表示被调用方法所需要的参数.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+    .......
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">MethodCallHandler</span> </span>&#123;
+      <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onMethodCall</span><span class="hljs-params">(MethodCall call, Result result)</span></span>;
+    &#125;
+    .......
+&#125;</code></pre>
+
+<p>接下来便是调用自定义MethodCallHandler中的<code>onMethodCall()</code>方法,该方法接受两个参数:</p>
+<ul>
+<li><p>call: MethodCall类型,它包含方法调用所需的信息</p>
+</li>
+<li><p>result: Result类型,用于处理方法调用结果</p>
+</li>
+</ul>
+<p>Result是一个回调接口,其定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MethodChannel</span> </span>&#123;
+    .......
+    <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Result</span> </span>&#123;
+        <span class="hljs-comment">// 方法调用处理成功时,调用success()</span>
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">success</span><span class="hljs-params">(@Nullable Object result)</span></span>;
+        <span class="hljs-comment">// 方法调用处理失败时,调用error()</span>
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">error</span><span class="hljs-params">(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails)</span></span>;
+        <span class="hljs-comment">// 方法调用遇到为定义的方法时,调用notImplemented()</span>
+        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">notImplemented</span><span class="hljs-params">()</span></span>;
+    &#125;
+    .......
+&#125;</code></pre>
+
+<h2 id="方法返回"><a href="#方法返回" class="headerlink" title="方法返回"></a>方法返回</h2><h3 id="Java-gt-Native"><a href="#Java-gt-Native" class="headerlink" title="Java -&gt; Native"></a>Java -&gt; Native</h3><p>回到IncomingMethodCallHandler中的<code>onMessage()</code>中,我们看到在调用MethodCallHandler的<code>onMethodCall()</code>时,以匿名内部的形式实现了Result接口,而且在实现中又调用reply实例的<code>reply()</code>方法来把响应数据写会到Flutter层.reply是BinaryReply接口类型,其具体实现之前已经说过(即<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/platform/android/io/flutter/view/FlutterNativeView.java?utm_source=share#L182:21" target="_blank" rel="noopener">PlatformMessageHandlerImpl</a>,在此就不做重复了.</p>
+<p>当数据需要写回时,数据首先通过codec被编码成ByteBuffer类型,然后调用reply的<code>reply()</code>方法.在<code>reply()</code>方法中,对于非null类型的ByteBuffer,会调用FlutterJNI中的<code>invokePlatformMessageResponseCallback()</code></p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FlutterJNI</span> </span>&#123;
+  <span class="hljs-keyword">private</span> Long nativePlatformViewId;
+    
+  ......  
+  <span class="hljs-meta">@UiThread</span>
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">invokePlatformMessageResponseCallback</span><span class="hljs-params">(<span class="hljs-keyword">int</span> responseId, ByteBuffer message, <span class="hljs-keyword">int</span> position)</span> </span>&#123;
+    <span class="hljs-comment">// 1.检查FlutterJNI是否已经attach到Native层,如若没有则抛出异常  </span>
+    ensureAttachedToNative();
+    <span class="hljs-comment">// 2.继续调用nativeInvokePlatformMessageResponseCallback()  </span>
+    nativeInvokePlatformMessageResponseCallback(
+        nativePlatformViewId,
+        responseId,
+        message,
+        position
+    );
+  &#125;
+    
+  <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">native</span> <span class="hljs-keyword">void</span> <span class="hljs-title">nativeInvokePlatformMessageResponseCallback</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">     <span class="hljs-keyword">long</span> nativePlatformViewId,</span></span>
+<span class="hljs-function"><span class="hljs-params">     <span class="hljs-keyword">int</span> responseId,</span></span>
+<span class="hljs-function"><span class="hljs-params">     ByteBuffer message,</span></span>
+<span class="hljs-function"><span class="hljs-params">     <span class="hljs-keyword">int</span> position</span></span>
+<span class="hljs-function"><span class="hljs-params">  )</span></span>;   
+    
+  ......  
+      
+  <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ensureAttachedToNative</span><span class="hljs-params">()</span> </span>&#123;
+    <span class="hljs-comment">// FlutterJNI attach到Native层后,会返回一个long类型的值用来初始化nativePlatformViewId  </span>
+    <span class="hljs-keyword">if</span> (nativePlatformViewId == <span class="hljs-keyword">null</span>) &#123;
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> RuntimeException(<span class="hljs-string">"Cannot execute operation because FlutterJNI is not attached to native."</span>);
+    &#125;
+  &#125;
+
+&#125;</code></pre>
+
+<p>在上述<code>invokePlatformMessageResponseCallback()</code>方法中,首先检查当前FlutterJNI实例是否已经attach到Native层,然后调用Native方法<code>nativeInvokePlatformMessageResponseCallback()</code>向JNI层写入数据,该Native方法Native层的实现在<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/platform/android/platform_view_android_jni.cc?utm_source=share#L583:20" target="_blank" rel="noopener">platform_view_android.cc</a>,其中参数responseId是之前Native层生成,又传至Java层的,现在有又需要将它传至Native层:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">bool</span> <span class="hljs-title">RegisterApi</span><span class="hljs-params">(JNIEnv* env)</span> </span>&#123;
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">const</span> JNINativeMethod flutter_jni_methods[] = &#123;
+        ......
+         &#123;
+          .name = <span class="hljs-string">"nativeInvokePlatformMessageResponseCallback"</span>,
+          .signature = <span class="hljs-string">"(JILjava/nio/ByteBuffer;I)V"</span>,
+          .fnPtr = <span class="hljs-keyword">reinterpret_cast</span>&lt;<span class="hljs-keyword">void</span>*&gt;(&amp;shell::InvokePlatformMessageResponseCallback),
+         &#125;,
+        .......
+    &#125;
+    .......
+&#125;</code></pre>
+
+<p>通过上述代码定义不难看出其最终<a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/shell/platform/android/platform_view_android.cc?utm_source=share#L108" target="_blank" rel="noopener">实现</a>如下:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">PlatformViewAndroid::InvokePlatformMessageResponseCallback</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">    JNIEnv* env,</span></span>
+<span class="hljs-function"><span class="hljs-params">    jint response_id,</span></span>
+<span class="hljs-function"><span class="hljs-params">    jobject java_response_data,</span></span>
+<span class="hljs-function"><span class="hljs-params">    jint java_response_position)</span> </span>&#123;
+  <span class="hljs-keyword">if</span> (!response_id)
+    <span class="hljs-keyword">return</span>;
+  <span class="hljs-comment">// 1.通过response_id从pending_responses_中取出response  </span>
+  <span class="hljs-keyword">auto</span> it = pending_responses_.<span class="hljs-built_in">find</span>(response_id);
+  <span class="hljs-keyword">if</span> (it == pending_responses_.<span class="hljs-built_in">end</span>())
+    <span class="hljs-keyword">return</span>;
+  <span class="hljs-comment">// 2.GetDirectBufferAddress函数返回一个指向被传入的ByteBuffer对象的地址指针  </span>
+  <span class="hljs-keyword">uint8_t</span>* response_data =
+      <span class="hljs-keyword">static_cast</span>&lt;<span class="hljs-keyword">uint8_t</span>*&gt;(env-&gt;GetDirectBufferAddress(java_response_data));
+  <span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;<span class="hljs-keyword">uint8_t</span>&gt; response = <span class="hljs-built_in">std</span>::<span class="hljs-built_in">vector</span>&lt;<span class="hljs-keyword">uint8_t</span>&gt;(
+      response_data, response_data + java_response_position);
+  <span class="hljs-keyword">auto</span> message_response = <span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(it-&gt;second);
+  <span class="hljs-comment">// 3.从pending_responses_中移除该response  </span>
+  pending_responses_.erase(it);
+  <span class="hljs-comment">// 4.调用response的Complete()方法将二进制结果返回</span>
+  message_response-&gt;Complete(
+      <span class="hljs-built_in">std</span>::make_unique&lt;fml::DataMapping&gt;(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(response)));
+&#125;</code></pre>
+
+<p>在上述代码中,首先以response_id为key,从<code>pending_responsed_</code>取出对应response.然后通过GetDirectBufferAddress函数获取二进制响应数据java_response_data对象的指针,最后调用reponse的<code>Complete()</code>方法将二进制结果返回.</p>
+<h3 id="Native-gt-Dart"><a href="#Native-gt-Dart" class="headerlink" title="Native -&gt; Dart"></a>Native -&gt; Dart</h3><p>上文提到response是PlatformMessageResponseDart类型,简单看一下其<code>Complete()</code><a href="https://sourcegraph.com/github.com/flutter/engine@053f7a8fa3bb4c50c28451f5403f176846692ce0/-/blob/lib/ui/window/platform_message_response_dart.cc?utm_source=share#L63:6" target="_blank" rel="noopener">方法实现</a>:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">PlatformMessageResponseDart::Complete</span><span class="hljs-params">(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">unique_ptr</span>&lt;fml::Mapping&gt; data)</span> </span>&#123;
+  <span class="hljs-keyword">if</span> (callback_.is_empty())
+    <span class="hljs-keyword">return</span>;
+  FML_DCHECK(!is_complete_);
+  is_complete_ = <span class="hljs-literal">true</span>;
+  ui_task_runner_-&gt;PostTask(fml::MakeCopyable(
+      [callback = <span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(callback_), data = <span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(data)]() <span class="hljs-keyword">mutable</span> &#123;
+        <span class="hljs-built_in">std</span>::<span class="hljs-built_in">shared_ptr</span>&lt;tonic::DartState&gt; dart_state =
+            callback.dart_state().lock();
+        <span class="hljs-keyword">if</span> (!dart_state)
+          <span class="hljs-keyword">return</span>;
+        tonic::DartState::Scope scope(dart_state);
+		<span class="hljs-comment">// 将Native层的二进制数据data转为Dart中的二进制数据byte_buffer</span>
+        Dart_Handle byte_buffer = WrapByteData(<span class="hljs-built_in">std</span>::<span class="hljs-built_in">move</span>(data));
+        tonic::DartInvoke(callback.Release(), &#123;byte_buffer&#125;);
+      &#125;));
+&#125;</code></pre>
+
+<p>在上述代码中,向ui_task_runner_添加了一个新的Task,在该Task中首先将Native层二进制数据转为Dart中的二进制数据,然后调用Dart中的callback将数据返回到Dart层.Dart层在接受到数据后,使用MethodCodec进行解码数据并将其返回到业务代码.</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>上述以Dart作为发起方,完整梳理一次从Dart向Android平台发起方法调用(MethodCall)流程.实际MethodCall也支持以Android平台为发起方,通过MethodChannel调用Dart中的方法,对此就不做说明了.=</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>目前为止,关于Platform Channel基本原理已经讲解完成,最后通过对MethodChannel工作原理进行分析来加深理解.对于IOS开发者而言,其原理实现类似.</p>
+<p>总体而言,Flutter中实现跨平台通信的机制简单却高效,总体难度不大.最后祝大家新年快乐,人人都能拐卖小学妹😈(Flutter).</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Android/">Android</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Flutter/">Flutter</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Platform-Channel/">Platform Channel</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Dart/">Dart</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/05/04/Vim%E9%AB%98%E9%98%B6%E6%8A%80%E5%B7%A7/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Vim高级使用技巧</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2019/01/27/%E6%80%9D%E8%80%83%E5%BF%AB%E4%B8%8E%E6%85%A2(%E4%B8%80)_%E9%AB%98%E6%95%88%E5%BC%80%E5%8F%91%E4%B9%8BIntellij%20IDEA/">
+                        <span class="hidden-mobile">思考快与慢(一):高效开发之Intellij IDEA</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "深入Flutter技术内幕:Platform Channel设计与实现(一)&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

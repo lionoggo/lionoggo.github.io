@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Java异常体系 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2015-01-17 22:13">
+                    2015年1月17日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    3.2k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    35
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="异常体系"><a href="#异常体系" class="headerlink" title="异常体系"></a>异常体系</h1><p>异常是指由于各种不期而至的情况,导致程序中断运行的一种指令流,如:文件找不到,非法参数,网络超时等.为了保证正序正常运行,在设计程序时必须考虑到各种异常情况,并正确的对异常进行处理.异常也是一种对象,java当中定义了许多异常类,并且定义了java.lang.Throwable作为所有异常类的基类.</p>
+<p>Java语言设计者将异常划分为两类:Error和Exception,其体系结构大致如下图所示：</p>
+<p><img src="https://i.imgur.com/HHbCeed.png" srcset="/img/loading.gif" alt="image-20181023103106457"></p>
+<p>Throwable有两个重要的子类:Exception和Error.Error是程序中无法处理的错误,表示运行应用程序中出现了严重的错误.此类错误一般表示代码运行时JVM出现问题.通常有Virtual MachineError,NoClassDefFoundError,OutOfMemoryError等,这些错误是不可查的,通常是非代码性错误.Exception则是程序本身可以捕获并且可以处理的异常.我们重点来看下Throwable类中常用的方法:</p>
+<ul>
+<li><p>e.getCause():返回抛出异常的原因</p>
+</li>
+<li><p>e.getMessage():返回异常信息</p>
+</li>
+<li><p>e.printStackTrace():发生异常时，跟踪堆栈信息并输出</p>
+</li>
+</ul>
+<h2 id="运行时异常与编译异常"><a href="#运行时异常与编译异常" class="headerlink" title="运行时异常与编译异常"></a>运行时异常与编译异常</h2><p>Exception这种异常又分为两类: 运行时异常和编译异常。</p>
+<ul>
+<li>运行时异常: 程序运行期间抛出的异常.RuntimeException类及其子类表示JVM在运行期间可能出现的错误.比如<code>NullPointerException</code>等.此类异常属于不可查异常,一般是由程序逻辑错误引起的,在程序中可以选择捕获处理.</li>
+<li>编译异常: 在编译阶段抛出的异常.Exception中除RuntimeException及其子类之外的异常.如果程序中出现此类异常,如说IOException,必须对该异常进行处理,否则编译不通过.在程序中,通常不会自定义该类异常,而是直接使用系统提供的异常类.</li>
+</ul>
+<h2 id="可查异常与不可查异常"><a href="#可查异常与不可查异常" class="headerlink" title="可查异常与不可查异常"></a>可查异常与不可查异常</h2><p>java中的异常其中一共就分为两类:checked execption和unchecked exception.</p>
+<ul>
+<li><p>checked exception: 编译器要求必须处理的异常,除RuntimeException及其子类外.其他的Exception异常都属于可查异常.编译器会检查此类异常,也就是说当编译器检查到应用中的某处可能会此类异常时，将会提示你处理本异常:要么使用try-catch捕获,要么使用throws语句抛出,否则编译不通过.</p>
+</li>
+<li><p>unchecked exception: 编译器不会进行检查并且不要求必须处理的异常,也就说当程序中出现此类异常时,即使我们没有try-catch捕获它,也没有使用throws抛出该异常,编译也会正常通过.该类异常包括RuntimeException及其子类和Error.</p>
+</li>
+</ul>
+<h1 id="异常处理流程"><a href="#异常处理流程" class="headerlink" title="异常处理流程"></a>异常处理流程</h1><p> 在java应用中，当一个方法出现错误而引发异常时，虚拟机会将该异常类型以及异常出现时的程序状态信息封装为异常对象对象,JVM采用不同的处理方式:</p>
+<ul>
+<li>运行异常将由系统自动抛出,应用本身可以捕获该异常或者继续往外层抛出</li>
+<li>对于方法中产生的Error,一旦发生JVM会自行处理</li>
+<li>对于所有的可查异常,必须进行捕获或者往外抛出交给上层处理.</li>
+</ul>
+<h2 id="捕获异常"><a href="#捕获异常" class="headerlink" title="捕获异常"></a>捕获异常</h2><h3 id="try-catch"><a href="#try-catch" class="headerlink" title="try-catch"></a>try-catch</h3><pre><code class="hljs java"><span class="hljs-keyword">try</span> &#123;
+	......
+     <span class="hljs-comment">//可能产生的异常的代码区，也称为监控区</span>
+	......
+    &#125;<span class="hljs-keyword">catch</span> (ExceptionType1 e) &#123;
+     <span class="hljs-comment">//捕获并处理try抛出异常类型为ExceptionType1的异常</span>
+    &#125;<span class="hljs-keyword">catch</span>(ExceptionType2 e) &#123;
+     <span class="hljs-comment">//捕获并处理try抛出异常类型为ExceptionType2的异常</span>
+    &#125;</code></pre>
+
+<p>监控区一旦发生异常,虚拟机根据当前运行时的信息创建异常对象，并将该异常对象抛出监控区，同时虚拟机根据该异常对象依次匹配catch子句.若匹配成功(抛出的异常对象的类型和catch子句的异常类的类型或者是该异常类的子类的类型一致),则运行其中catch代码块中的异常处理代码.一旦处理结束那就意味着整个try-catch结束.对于含有多个catch子句的情况,一旦其中一个catch子句与抛出的异常对象类型一致时,其他catch子句将不再有匹配异常对象的机会.</p>
+<h3 id="try-catch-finally"><a href="#try-catch-finally" class="headerlink" title="try-catch-finally"></a>try-catch-finally</h3><pre><code class="hljs java"><span class="hljs-keyword">try</span> &#123;
+    .......
+     <span class="hljs-comment">//可能产生的异常的代码区</span>
+ .......
+ &#125;<span class="hljs-keyword">catch</span> (ExceptionType1 e) &#123;
+     <span class="hljs-comment">//捕获并处理try抛出异常类型为ExceptionType1的异常</span>
+ &#125;<span class="hljs-keyword">catch</span> (ExceptionType2 e)&#123;
+     <span class="hljs-comment">//捕获并处理try抛出异常类型为ExceptionType2的异常</span>
+ &#125;<span class="hljs-keyword">finally</span>&#123;
+     <span class="hljs-comment">//无论是出现异常，finally块中的代码都将被执行</span>
+ &#125;</code></pre>
+
+<p>try-catch-finally代码块的执行顺序按照以下方式进行:</p>
+<ol>
+<li><p>try没有捕获异常时,try代码块中的语句依次被执行,跳过catch.如果存在finally则执行finally代码块,否则执行后续代码.</p>
+</li>
+<li><p>try捕获到异常时,如果没有与之匹配的catch子句,则该异常交给JVM处理.如果存在finally,则其中的代码仍然被执行,但是finally之后的代码不会被执行.</p>
+</li>
+<li><p>try捕获到异常时,如果存在与之匹配的catch,则跳到该catch代码块执行处理.如果存在finally则执行finally代码块.执行完finally代码块之后继续执行后续代码;否则直接执行后续代码.需要注意,try代码块出现异常之后的代码不会被执行,如下图所示:</p>
+<p><img src="https://i.imgur.com/SfVcmte.png" srcset="/img/loading.gif" alt="image-20181023105901877"></p>
+</li>
+</ol>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><ul>
+<li>try代码块:用于捕获异常.其后可以接零个或者多个catch块.如果没有catch块,后必须跟finally块来完成资源释放等操作.另外建议不要在finally中使用return.不用尝试通过catch来控制代码流程.</li>
+<li>catch代码块:用于捕获异常,并在其中处理异常.</li>
+<li>finally代码块:无论是否捕获异常,finally代码总会被执行.如果try代码块或者catch代码块中有return语句时,finally代码块将在方法返回前被执行.注意以下几种情况，finally代码块不会被执行<ol>
+<li>在前边的代码中使用</li>
+<li>程序所在的线程死亡或者(系统突然关机)</li>
+<li>如果在finally代码块中的操作又产生异常,则该finally代码块不能完全执行结束,同时该异常会覆盖之前抛出的异常</li>
+</ol>
+</li>
+</ul>
+<h2 id="抛出异常"><a href="#抛出异常" class="headerlink" title="抛出异常"></a>抛出异常</h2><h3 id="throws"><a href="#throws" class="headerlink" title="throws"></a>throws</h3><p>如果一个方法可能抛出异常,但是没有能力处理该异常或者需要通过该异常向上层汇报处理结果,可以在方法声明时使用throws来抛出异常,这就相当于计算机硬件发生损坏,但是计算机本身无法处理,就将该异常交给维修人员来处理,</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> returnType <span class="hljs-title">methodName</span><span class="hljs-params">(params)</span> <span class="hljs-keyword">throws</span> Exception1,Exception2......</span>&#123; &#125;</code></pre>
+
+<p>其中Exception1,Exception2…代表该方法可能抛出的异常.该方法的调用者需要对其进行处理,当然也可以继续往外抛出.</p>
+<h3 id="throw"><a href="#throw" class="headerlink" title="throw"></a>throw</h3><p>在方法内,可以用throw来抛出一个Throwable类型的异常.JVM一旦执行到throw语句，将退出该方法栈,也就是throw后面的代码将不会被执行了.需要注意我们只能抛出Throwable和其子类类型的对象。</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> returnType <span class="hljs-title">methodName</span> <span class="hljs-params">(params)</span> </span>&#123;
+    ......
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ExceptionType;
+    ......
+&#125;</code></pre>
+
+<h1 id="异常转译"><a href="#异常转译" class="headerlink" title="异常转译"></a>异常转译</h1><p>异常转义就是将一种类型的异常转成另一种类型的异常.之所以要进行转译,是为了更准确的描述异常.就我个人而言,我更喜欢称之为异常类型转换.在实际应用中,为了构建自己的日志系统,经常需要把系统的一些异常信息描述成我们统一的异常信息,此时就可以使用异常转译.异常转译针对所有Throwable类的子类而言,其子类型都可以相互转换.</p>
+<p>在下面的代码中,我们自定义了MyException异常类,然后我们在遇到IOException类型的异常将其转为MyException类型的异常:</p>
+<pre><code class="hljs java"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyException</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Exception</span> </span>&#123;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MyException</span><span class="hljs-params">(String msg, Throwable e)</span> </span>&#123;
+      <span class="hljs-keyword">super</span>(msg, e);
+   &#125;
+&#125;
+
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Demo</span> </span>&#123;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span><span class="hljs-keyword">throws</span> MyException </span>&#123;
+      Filefile =<span class="hljs-keyword">new</span> File(<span class="hljs-string">"H:/test.txt"</span>);
+      <span class="hljs-keyword">if</span> (file.exists())
+          <span class="hljs-keyword">try</span> &#123;
+             file.createNewFile();
+          &#125;<span class="hljs-keyword">catch</span> (IOException e) &#123;
+             <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> MyException(<span class="hljs-string">"文件创建失败！"</span>, e);
+          &#125;
+   &#125;
+&#125;</code></pre>
+
+<h1 id="异常链"><a href="#异常链" class="headerlink" title="异常链"></a>异常链</h1><p>在异常转译的过程中,我们希望在新类型的异常对象中保存原始类型异常对象的信息,即当程序捕获了一个底层的异常,而在catch处理异常的时候选择将该异常封装在一个新类型异常对象中,并将新异常对象继续抛给上层,此时最原始的异常就会逐层传递,形成一个由低到高的异常链.由于异常链每次都需要就将原始的异常对象封装为新的异常对象,消耗大量资源,因此在实际应用中需要特别谨慎.现在（jdk 1.4之后）所有的Throwable的子类构造中都可以接受一个cause对象,这个cause也就是原始的异常对象.下面是一个不错的例子：</p>
+<pre><code class="hljs java"><span class="hljs-comment">// 高层</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HighLevelExceptionextends</span> <span class="hljs-title">Exception</span></span>&#123;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">HighLevelException</span><span class="hljs-params">(Throwable cause)</span> </span>&#123;
+      <span class="hljs-keyword">super</span>(cause);
+   &#125;
+&#125;
+<span class="hljs-comment">// 中层</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MiddleLevelExceptionextends</span> <span class="hljs-title">Exception</span></span>&#123;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MiddleLevelException</span><span class="hljs-params">(Throwable cause)</span> </span>&#123;
+      <span class="hljs-keyword">super</span>(cause);
+   &#125;
+&#125;
+<span class="hljs-comment">// 底层</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">LowLevelExceptionextends</span> <span class="hljs-title">Exception</span></span>&#123;
+&#125;
+
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TestException</span> </span>&#123;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">highLevelAccess</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> HighLevelException</span>&#123;
+      <span class="hljs-keyword">try</span> &#123;
+          middleLevelAccess();
+      &#125;<span class="hljs-keyword">catch</span> (Exception e) &#123;
+          <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> HighLevelException(e);
+      &#125;
+   &#125;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">middleLevelAccess</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> MiddleLevelException</span>&#123;
+      <span class="hljs-keyword">try</span> &#123;
+          lowLevelAccess();
+      &#125;<span class="hljs-keyword">catch</span> (Exception e) &#123;
+          <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> MiddleLevelException(e);
+      &#125;
+   &#125;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">lowLevelAccess</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> LowLevelException </span>&#123;
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> LowLevelException();
+   &#125;
+
+   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;
+      <span class="hljs-comment">/*</span>
+<span class="hljs-comment">       * lowlevelAccess()将异常对象抛给middleLevelAccess()，而</span>
+<span class="hljs-comment">       * middleLevelAccess()又将异常对象抛给highLevelAccess(),</span>
+<span class="hljs-comment">       *也就是底层的异常对象一层层传递给高层。最终在在高层可以获得底层的异常对象。</span>
+<span class="hljs-comment">       */</span>
+      <span class="hljs-keyword">try</span> &#123;
+          <span class="hljs-keyword">new</span> TestException().highLevelAccess();
+      &#125;<span class="hljs-keyword">catch</span> (HighLevelException e) &#123;
+          e.printStackTrace();
+          System.out.println(e.getCause());
+      &#125;
+   &#125;
+&#125;</code></pre>
+
+<h1 id="异常汇总"><a href="#异常汇总" class="headerlink" title="异常汇总"></a>异常汇总</h1><p>此部分可以api文档中进行查阅,这里仅做参考.</p>
+<table>
+<thead>
+<tr>
+<th>异常类型</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IllegalAccessError</td>
+<td>违法访问错误.当一个应用试图访问,修改某个类的域或者调用其方法,但是又违反域或方法的可见性声明,则抛出该异常</td>
+</tr>
+<tr>
+<td>InstantiationError</td>
+<td>实例化错误.当一个应用试图通过Java的new操作符构造一个抽象类或者接口时抛出该异常.</td>
+</tr>
+<tr>
+<td>OutOfMemoryError</td>
+<td>内存不足错误.当可用内存不足以让Java虚拟机分配给一个对象时抛出该错误.</td>
+</tr>
+<tr>
+<td>StackOverflowError</td>
+<td>堆栈溢出错误.当一个应用递归调用的层次太深而导致堆栈溢出或者陷入死循环时抛出该错误.</td>
+</tr>
+<tr>
+<td>ClassCastException</td>
+<td>强制类型转换异常.假设有类A和B(A不是B的父类或子类),O是A的实例,那么当强制将O构造为类B的实例时抛出该异常.</td>
+</tr>
+<tr>
+<td>ClassNotFoundException</td>
+<td>找不到类异常.当应用试图根据字符串形式的类名构造类,而在遍历CLASSPAH之后找不到对应名称的class文件时.抛出该异常.</td>
+</tr>
+<tr>
+<td>ArithmeticException</td>
+<td>算术条件异常.譬如:整数除零等</td>
+</tr>
+<tr>
+<td>ArrayIndexOutOfBoundsException</td>
+<td>数组索引越界异常,当对数组的索引值为负数或大于等于数组大小时抛出</td>
+</tr>
+<tr>
+<td>IndexOutOfBoundsException</td>
+<td>索引越界异常.当访问某个序列的索引值小于0或大于等于序列大小时,抛出该异常.</td>
+</tr>
+<tr>
+<td>NoSuchFieldException</td>
+<td>属性不存在异常,当访问某个类的不存在的属性时抛出该异常</td>
+</tr>
+<tr>
+<td>NoSuchMethodException</td>
+<td>方法不存在异常.当访问某个类的不存在的方法时抛出该异常</td>
+</tr>
+<tr>
+<td>NullPointerException</td>
+<td>空指针异常,当应用试图在要求使用对象的地方使用了null时抛出该异常.</td>
+</tr>
+<tr>
+<td>NumberFormatException</td>
+<td>数字格式异常.当试图将一个String转换为指定的数字类型.而该字符串确不满足数字类型要求的格式时,抛出该异常.</td>
+</tr>
+<tr>
+<td>StringIndexOutOfBoundsException</td>
+<td>字符串索引越界异常.当使用索引值访问某个字符串中的字符,而该索引值小于0或大于等于序列大小时,抛出该异常.</td>
+</tr>
+<tr>
+<td>llegalAccessException</td>
+<td>违法的访问异常.当应用试图通过反射方式创建某个类的实例,访问该类属性,调用该类方法,而当时又无法访问类</td>
+</tr>
+<tr>
+<td>InterruptedException</td>
+<td>线程被中断异常.当某个线程处于长时间的等待,休眠或其他暂停状态,而此时其他的线程通过Thread的interrupt方法终止该线程时抛出该异常</td>
+</tr>
+<tr>
+<td>IllegalStateException</td>
+<td>违法的状态异常.当在Java环境和应用尚未处于某个方法的合法调用状态,而调用了该方法时,抛出该异常.</td>
+</tr>
+<tr>
+<td>UnsatisfiedLinkError</td>
+<td>链接库链接错误.当Java虚拟机未找到某个类的声明为native方法的本机语言定义时抛出.</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JVM/">JVM</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Java/">Java</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Exception/">Exception</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Error/">Error</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2015/10/15/%E8%B0%88JVM%E5%85%B3%E9%97%AD%E4%B8%8E%E5%85%B3%E9%97%AD%E9%92%A9%E5%AD%90/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">谈JVM关闭与关闭钩子</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Java异常体系&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

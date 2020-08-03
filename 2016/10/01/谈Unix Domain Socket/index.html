@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Unix Domain Socket - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2016-10-01 16:30">
+                    2016年10月1日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    1.8k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    24
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="Unix-Domain-Socket简介"><a href="#Unix-Domain-Socket简介" class="headerlink" title="Unix Domain Socket简介"></a>Unix Domain Socket简介</h1><p>Unix Domain Socket是在网络Socket架构上发展而来用来实现同一台主机内进程通信的机制,简称UDS.和网络Socket相比,使用UDS传输数据不需要经过网络协议栈,不存在数据封包和拆包等过程,只涉及数据拷贝的过程.UDS使用系统文件地址来作为通信地址,无须像网络Socket那样必须指定可用的IP和端口号,使用更加简单高效.</p>
+<p>此外UDS支持SOCK_DGRAM和SOCK_DGRAM两种工作方式,即数据包套接字和流套接字,这两者类似UDP/TCP,但由于UDS在本机内是借助内核通信,因此不会出现丢包及发送包和接收包次序不一致的问题,换言之就是两种工作模式下,UDS都是可靠的通信机制.</p>
+<p>尽管是POSIX标准中的一个组件,但在LInux中同样是受支持的,此外UDS是全双工的,能够用于两个没有亲缘关系的进程之间通信.</p>
+<h1 id="UDS函数"><a href="#UDS函数" class="headerlink" title="UDS函数"></a>UDS函数</h1><p>和使用网络Socket类似,UDS服务端使用流程为:</p>
+<pre><code class="hljs shell">socket -&gt; bind -&gt; listen -&gt; accept -&gt; recv/send -&gt; close</code></pre>
+
+<p>UDS客户端使用流程如下:</p>
+<pre><code class="hljs shell">socket -&gt; connect -&gt; recv/send -&gt; close</code></pre>
+
+<h2 id="Socket创建"><a href="#Socket创建" class="headerlink" title="Socket创建"></a>Socket创建</h2><p>通过函数<code>socket()</code>来创建Socket,其函数原型为:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">socket</span> <span class="hljs-params">(<span class="hljs-keyword">int</span> domain, <span class="hljs-keyword">int</span> type, <span class="hljs-keyword">int</span> protocol)</span></span>;</code></pre>
+
+<p>在使用UDS时,domain必须被设置成AF_UNIX或AF_LOCAL,而不能网络SOCKET中的AF_INET.使用AF_UNIX参数将会在系统上创建一个socket文件,不同进程通过读写这个文件来实现通信.</p>
+<p>第二个参数type表示套接字的类型:SOCK_STREAM或SOCK_DGRAM.正如之前所说SOCK_STREAM和SOCK_DGRAM都是可靠的,不存在丢包以及发送包的次序和接收包的次序不一致的问题,两者之间唯一的区别在于SOCK_STREAM无论发送多大的数据都不会被截断,而对于SOCK_DGRAM而言,如果发送的数据超过了一个报文的最大长度,那么数据会被截断.</p>
+<p>第三个参数protocol表示协议,对UDS而言,其值需要被设置成0.</p>
+<h2 id="Socket绑定"><a href="#Socket绑定" class="headerlink" title="Socket绑定"></a>Socket绑定</h2><p>如果服务端Socket采用SOCK_STREAM工作模式,那么需要为该Socket对应的文件描述地址绑定地址,该过程通过<code>bind()</code>函数实现,其原型为:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, <span class="hljs-keyword">const</span> struct sockaddr *addr, <span class="hljs-keyword">socklen_t</span> addrlen)</span></span>;</code></pre>
+
+<p>sockfd即通过<code>socket()</code>返回的文件描述符,<code>*addr</code>用于描述套接字的地址,采用sockaddr_un结构体表示,addrlen表示结构体的长度.</p>
+<pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sockaddr_un</span> &#123;</span>
+    <span class="hljs-keyword">sa_family_t</span> sun_family;         <span class="hljs-comment">/* AF_UNIX */</span>
+    <span class="hljs-keyword">char</span> sun_path[UNIX_PATH_MAX];   <span class="hljs-comment">/* 路径名 */</span>
+&#125;;</code></pre>
+
+<p>在sockaddr_un中,字段sun_family必须要设置成AF_UNIX.而sun_path则表示路径名.在使用<code>bind()</code>时,需要创建并初始化sockaddr_un结构体,并将该结构体的指定传入作为<code>bind()</code>参数,同时将addrlen设置成该结构体的实际大小.</p>
+<h2 id="监听客户端连接"><a href="#监听客户端连接" class="headerlink" title="监听客户端连接"></a>监听客户端连接</h2><p>对于服务端而言,服务端Socket需要通过<code>listen()</code>监听来自客户端的连接,其使用过程和网络Socket保持一致,该函数原型为:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">listen</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, <span class="hljs-keyword">int</span> backlog)</span></span>;</code></pre>
+
+<p>参数sockfd是Socket创建后返回的文件描述符;而backlog用于设置请求排队的最大长度,也就是当有多个客户端程序和服务端相连时,该参数用来表示客户端排队的长度.</p>
+<h2 id="接受客户端连接"><a href="#接受客户端连接" class="headerlink" title="接受客户端连接"></a>接受客户端连接</h2><p>对于服务端而言,当接受到来自客户端请求时,需要<code>accept()</code>来处理客户端连接,其函数原型为:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">accept</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, struct sockaddr *addr, <span class="hljs-keyword">socklen_t</span> *addrlen)</span></span>;</code></pre>
+
+<p>和网络Socket不同,UDS不存在客户端地址的问题,所以参数addr和addrlen参数需要被设置成NULL.在<code>accept()</code>调用后,服务器端会阻塞直到客户端发起连接. </p>
+<h2 id="连接服务端"><a href="#连接服务端" class="headerlink" title="连接服务端"></a>连接服务端</h2><p>对于客户端Socket而言,在使用<code>socket()</code>创建套接字描述符之后,就可以通过<code>connect()</code>来连接服务端了,其函数原型为:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">connect</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, struct sockaddr *addr,<span class="hljs-keyword">int</span> addrlen)</span></span>;</code></pre>
+
+<p>和<code>bind()</code>函数类似,在该函数中同样需要制定*addr,用于表示需要连接到的服务端套接字地址.</p>
+<h2 id="收发数据"><a href="#收发数据" class="headerlink" title="收发数据"></a>收发数据</h2><p>当客户端和服务端建立连接后,就可以进行数据收发了,对于工作在SOCK_STREAM模式下的服务端而言,通过<code>write()</code>和<code>read()</code>实现数据写入和读取操作,其使用方式和操作网络Socket一致:</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">ssize_t</span> <span class="hljs-title">read</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, <span class="hljs-keyword">void</span> *buf, <span class="hljs-keyword">size_t</span> length)</span></span>; 
+<span class="hljs-function"><span class="hljs-keyword">ssize_t</span> <span class="hljs-title">write</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, <span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span> *buf, <span class="hljs-keyword">size_t</span> length)</span></span>;</code></pre>
+
+<p>对于工作在SOCK_DGRAM模式下的服务端而言,接受数据和发送数据分别通过函数<code>recvfor()</code>和<code>sendto()</code>来完成.</p>
+<pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">recvfrom</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, <span class="hljs-keyword">void</span> *buf, <span class="hljs-keyword">int</span> length, <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> flags, struct sockaddr *addr, <span class="hljs-keyword">int</span> *addrlen)</span></span>;
+
+<span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">sendto</span> <span class="hljs-params">(<span class="hljs-keyword">int</span> sockfd, <span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span> *buf, <span class="hljs-keyword">int</span> length, <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> flags, <span class="hljs-keyword">const</span> struct sockaddr *addr, <span class="hljs-keyword">int</span> addrlen)</span></span>;</code></pre>
+
+<h1 id="UDS实例"><a href="#UDS实例" class="headerlink" title="UDS实例"></a>UDS实例</h1><h2 id="服务端代码"><a href="#服务端代码" class="headerlink" title="服务端代码"></a>服务端代码</h2><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stdlib.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stdio.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stddef.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;sys/socket.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;sys/un.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;errno.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;string.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;unistd.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;ctype.h&gt;   </span></span>
+ 
+<span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> MAXLINE 80  </span>
+ 
+<span class="hljs-keyword">char</span> *socket_path = <span class="hljs-string">"server.socket"</span>;  
+ 
+<span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span>  </span>
+<span class="hljs-function"></span>&#123;  
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sockaddr_un</span> <span class="hljs-title">server_addr</span>, <span class="hljs-title">client_addr</span>;</span>  
+    <span class="hljs-keyword">socklen_t</span> client_addr_len;  
+    <span class="hljs-keyword">int</span> serverfd; 
+    <span class="hljs-keyword">int</span> clientfd;
+    <span class="hljs-keyword">int</span> <span class="hljs-built_in">size</span>;  
+    <span class="hljs-keyword">char</span> buf[MAXLINE];  
+    <span class="hljs-keyword">int</span> i, n;  
+    
+    <span class="hljs-comment">// 1. 创建Socket</span>
+    <span class="hljs-keyword">if</span> ((serverfd = socket(AF_UNIX, SOCK_STREAM, <span class="hljs-number">0</span>)) &lt; <span class="hljs-number">0</span>) &#123;  
+        perror(<span class="hljs-string">"Socket创建错误"</span>);  
+        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);  
+    &#125;  
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Socket创建完成\n"</span>);
+    <span class="hljs-built_in">memset</span>(&amp;server_addr, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(server_addr));  
+    server_addr.sun_family = AF_UNIX;  
+    <span class="hljs-built_in">strcpy</span>(server_addr.sun_path, socket_path);  
+    <span class="hljs-built_in">size</span> = offsetof(struct sockaddr_un, sun_path) + <span class="hljs-built_in">strlen</span>(server_addr.sun_path);  
+    unlink(socket_path);  
+    
+    <span class="hljs-comment">// 2. 绑定Socket</span>
+    <span class="hljs-keyword">if</span> (bind(serverfd, (struct sockaddr *)&amp;server_addr, <span class="hljs-built_in">size</span>) &lt; <span class="hljs-number">0</span>) &#123;  
+        perror(<span class="hljs-string">"Socket绑定错误"</span>);  
+        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);  
+    &#125;  
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Socket绑定成功\n"</span>);  
+    
+    <span class="hljs-comment">// 3. 监听Socket  </span>
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">listen</span>(serverfd, <span class="hljs-number">10</span>) &lt; <span class="hljs-number">0</span>) &#123;  
+        perror(<span class="hljs-string">"Socket监听错误"</span>);  
+        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);          
+    &#125;  
+    <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Socket开始监听\n"</span>);  
+ 
+    <span class="hljs-keyword">while</span>(<span class="hljs-number">1</span>) &#123;  
+        client_addr_len = <span class="hljs-keyword">sizeof</span>(client_addr);         
+        <span class="hljs-keyword">if</span> ((clientfd = accept(serverfd, (struct sockaddr *)&amp;client_addr, &amp;client_addr_len)) &lt; <span class="hljs-number">0</span>)&#123;  
+            perror(<span class="hljs-string">"连接建立失败"</span>);  
+            <span class="hljs-keyword">continue</span>;  
+        &#125;  
+          
+        <span class="hljs-keyword">while</span>(<span class="hljs-number">1</span>) &#123;  
+            n = <span class="hljs-built_in">read</span>(clientfd, buf, <span class="hljs-keyword">sizeof</span>(buf));  
+            <span class="hljs-keyword">if</span> (n &lt; <span class="hljs-number">0</span>) &#123;  
+                perror(<span class="hljs-string">"读取客户端数据错误"</span>);  
+                <span class="hljs-keyword">break</span>;  
+            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(n == <span class="hljs-number">0</span>) &#123;  
+                <span class="hljs-built_in">printf</span>(<span class="hljs-string">"连接断开\n"</span>);  
+                <span class="hljs-keyword">break</span>;  
+            &#125;  
+              
+            <span class="hljs-built_in">printf</span>(<span class="hljs-string">"接受客户端数据: %s"</span>, buf);  
+ 
+            <span class="hljs-keyword">for</span>(i = <span class="hljs-number">0</span>; i &lt; n; i++) &#123;  
+                buf[i] = <span class="hljs-built_in">toupper</span>(buf[i]);  
+            &#125; 
+             
+            <span class="hljs-built_in">write</span>(clientfd, buf, n);  
+            <span class="hljs-built_in">printf</span>(<span class="hljs-string">"向客户端发送数据: %s"</span>, buf); 
+        &#125;  
+        <span class="hljs-built_in">close</span>(clientfd);  
+    &#125;  
+    <span class="hljs-built_in">close</span>(serverfd);  
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;  
+&#125;</code></pre>
+
+<h2 id="客户端代码"><a href="#客户端代码" class="headerlink" title="客户端代码"></a>客户端代码</h2><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stdlib.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stdio.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;stddef.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;sys/socket.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;sys/un.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;errno.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;string.h&gt;  </span></span>
+<span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;unistd.h&gt;  </span></span>
+ 
+<span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> MAXLINE 80  </span>
+ 
+<span class="hljs-keyword">char</span> *client_path = <span class="hljs-string">"client.socket"</span>;  
+<span class="hljs-keyword">char</span> *server_path = <span class="hljs-string">"server.socket"</span>;  
+ 
+<span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>&#123;  
+    <span class="hljs-class"><span class="hljs-keyword">struct</span>  <span class="hljs-title">sockaddr_un</span> <span class="hljs-title">client_addr</span>, <span class="hljs-title">server_addr</span>;</span>  
+    <span class="hljs-keyword">int</span> len;  
+    <span class="hljs-keyword">char</span> buf[<span class="hljs-number">100</span>];  
+    <span class="hljs-keyword">int</span> sockfd, n;  
+ 
+    <span class="hljs-comment">// 1. Socket创建</span>
+    <span class="hljs-keyword">if</span> ((sockfd = socket(AF_UNIX, SOCK_STREAM, <span class="hljs-number">0</span>)) &lt; <span class="hljs-number">0</span>)&#123;  
+        perror(<span class="hljs-string">"Socket创建失败"</span>);  
+        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);  
+    &#125;  
+      
+    <span class="hljs-built_in">memset</span>(&amp;client_addr, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(client_addr));  
+    client_addr.sun_family = AF_UNIX;  
+    <span class="hljs-built_in">strcpy</span>(client_addr.sun_path, client_path);  
+    len = offsetof(struct sockaddr_un, sun_path) + <span class="hljs-built_in">strlen</span>(client_addr.sun_path);  
+    unlink(client_addr.sun_path);  
+    
+    <span class="hljs-comment">// 2. Socket绑定</span>
+    <span class="hljs-keyword">if</span> (bind(sockfd, (struct sockaddr *)&amp;client_addr, len) &lt; <span class="hljs-number">0</span>) &#123;  
+        perror(<span class="hljs-string">"Socket绑定错误"</span>);  
+        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);  
+    &#125;  
+ 
+    <span class="hljs-built_in">memset</span>(&amp;server_addr, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(server_addr));  
+    server_addr.sun_family = AF_UNIX;  
+    <span class="hljs-built_in">strcpy</span>(server_addr.sun_path, server_path);  
+    len = offsetof(struct sockaddr_un, sun_path) + <span class="hljs-built_in">strlen</span>(server_addr.sun_path);  
+    
+    <span class="hljs-comment">// 3. 连接服务端</span>
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">connect</span>(sockfd, (struct sockaddr *)&amp;server_addr, len) &lt; <span class="hljs-number">0</span>)&#123;  
+        perror(<span class="hljs-string">"连接服务端失败"</span>);  
+        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);  
+    &#125;  
+ 
+    <span class="hljs-keyword">while</span>(fgets(buf, MAXLINE, <span class="hljs-built_in">stdin</span>) != <span class="hljs-literal">NULL</span>) &#123;    
+         <span class="hljs-built_in">write</span>(sockfd, buf, <span class="hljs-built_in">strlen</span>(buf));    
+         n = <span class="hljs-built_in">read</span>(sockfd, buf, MAXLINE);    
+         <span class="hljs-keyword">if</span> ( n &lt; <span class="hljs-number">0</span> ) &#123;    
+            <span class="hljs-built_in">printf</span>(<span class="hljs-string">"服务端关闭\n"</span>);    
+         &#125;<span class="hljs-keyword">else</span> &#123;    
+            <span class="hljs-built_in">write</span>(STDOUT_FILENO, buf, n);    
+         &#125;    
+    &#125;   
+    <span class="hljs-built_in">close</span>(sockfd);  
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;  
+&#125;</code></pre>
+
+<h2 id="编译并执行"><a href="#编译并执行" class="headerlink" title="编译并执行"></a>编译并执行</h2><p>使用gcc命令对其进行编译后,并运行</p>
+<pre><code class="hljs shell"><span class="hljs-meta">#</span><span class="bash"> 编译</span>
+gcc uds_server.c -o server
+gcc uds_client.c -o client
+
+<span class="hljs-meta">#</span><span class="bash"> 运行</span>
+./server
+./client</code></pre>
+
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Unix/">Unix</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Socket/">Socket</a>
+                    
+                      <a class="hover-with-bg" href="/tags/UDS/">UDS</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2016/12/10/%E8%B0%88Android%20SDK%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%BC%80%E5%8F%91(%E4%B8%80)/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Android SDK设计与开发(一)</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2016/09/21/JDK1.8%E4%B9%8BHashMap%E5%93%88%E5%B8%8C%E6%95%B0%E7%BB%84%E5%AE%B9%E9%87%8F%E7%AE%97%E6%B3%95/">
+                        <span class="hidden-mobile">HashMap之哈希数组容量计算</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Unix Domain Socket&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

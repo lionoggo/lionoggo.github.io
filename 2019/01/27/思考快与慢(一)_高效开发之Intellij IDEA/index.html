@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>思考快与慢(一):高效开发之Intellij IDEA - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2019-01-27 12:51">
+                    2019年1月27日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    1.3k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    17
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>在15年开始从Eclipse转入IDEA时,为了兼容当时的使用习惯,自定义了许多快捷键.但随着后面MacOS逐渐成为我主要的开发平台,原先在Windows平台上定义的很多快捷键与MacOS原生快捷键有很多的冲突,经过一个阶段的思考与实践之后,我决定放弃原有的习惯,以全新的视角接受Intellij IDEA中的快捷键.</p>
+<blockquote>
+<p>下述快捷键适用于MacOS平台,基于<code>Mac 10.5+</code>.</p>
+</blockquote>
+<h2 id="编辑"><a href="#编辑" class="headerlink" title="编辑"></a>编辑</h2><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Command+Space</td>
+<td>Basic code completion</td>
+<td>基本代码补齐</td>
+</tr>
+<tr>
+<td>Command+Shift+Space</td>
+<td>Smart code completion</td>
+<td>智能补齐</td>
+</tr>
+<tr>
+<td>Command+Shift+Enter</td>
+<td>Complete statement</td>
+<td>语句补全(末尾自动加分号)</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+Alt+Enter</td>
+<td>Start New Line Before Current</td>
+<td>从上方开始一行</td>
+</tr>
+<tr>
+<td>Shift+Enter</td>
+<td>Start New Line</td>
+<td>从下方开始一行</td>
+</tr>
+<tr>
+<td>Shift+Alt+↑/↓</td>
+<td>Move Line Up/Down</td>
+<td>上移/下移一行</td>
+</tr>
+<tr>
+<td>Shift+Command+↑/↓</td>
+<td>Move Statement Up/Down</td>
+<td>上移/下移一个块</td>
+</tr>
+<tr>
+<td>Alt+↑/↓</td>
+<td>Extend/Shrink Selection</td>
+<td>选中/反选代码块</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+P</td>
+<td>Parameter info</td>
+<td>参数信息提示</td>
+</tr>
+<tr>
+<td>Command+Y</td>
+<td>Open quick definition lookup</td>
+<td>浮窗快速查看定义</td>
+</tr>
+<tr>
+<td>Ctrl+J</td>
+<td>Quick documentation lookup</td>
+<td>文档快速预览</td>
+</tr>
+<tr>
+<td>Ctrl+O</td>
+<td>Override methods</td>
+<td>可覆盖方法快速预览</td>
+</tr>
+<tr>
+<td>Crtl+I</td>
+<td>Implement Code</td>
+<td>实现接口方法</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+Shift+delete</td>
+<td>Last edit location</td>
+<td>跳转到上次编辑的地方</td>
+</tr>
+<tr>
+<td>Command+Z</td>
+<td>Undo</td>
+<td>撤销修改</td>
+</tr>
+<tr>
+<td>Command+Shift+Z</td>
+<td>Redo</td>
+<td>恢复刚才修改</td>
+</tr>
+<tr>
+<td>Command+/</td>
+<td>Comment/uncomment wiht line comment</td>
+<td>注释/反注释行</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+N</td>
+<td>Generate code</td>
+<td>生成代码</td>
+</tr>
+<tr>
+<td>Command+Alt+T</td>
+<td>Surround with</td>
+<td>嵌入代码块，如try…catch</td>
+</tr>
+<tr>
+<td>Command+Alt+L</td>
+<td>Reformat code</td>
+<td>格式化代码</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+X</td>
+<td>Cut current line to clipboard</td>
+<td>剪贴行到剪贴板</td>
+</tr>
+<tr>
+<td>Command+C</td>
+<td>Copy current line to clipboard</td>
+<td>复制行</td>
+</tr>
+<tr>
+<td>Command+V</td>
+<td>Paste from clipboard</td>
+<td>粘贴</td>
+</tr>
+<tr>
+<td>Command+D</td>
+<td>Duplicate current line</td>
+<td>复制行</td>
+</tr>
+<tr>
+<td>Command+Delete</td>
+<td>Delete line at caret</td>
+<td>删除行</td>
+</tr>
+<tr>
+<td>Command+W</td>
+<td>Close active editor tab</td>
+<td>关闭当前编辑窗口</td>
+</tr>
+</tbody></table>
+<h1 id="生产力"><a href="#生产力" class="headerlink" title="生产力"></a>生产力</h1><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Command+J</td>
+<td>Insert Live Template</td>
+<td>模板插入</td>
+</tr>
+<tr>
+<td>Alt+Enter</td>
+<td>Show Intention Actions</td>
+<td>意图预测与智能帮助,比如简单重构,移除死代码,结构调整,自动导包等</td>
+</tr>
+<tr>
+<td>Command+Shift+A</td>
+<td>Find Action</td>
+<td>命令查询</td>
+</tr>
+</tbody></table>
+<h2 id="模板补全"><a href="#模板补全" class="headerlink" title="模板补全"></a>模板补全</h2><p>在使用Command+J选中模板关键字或者直接敲如模板关键字后,可以直接通过Tab或Enter键触发补全操作,其中<code>$1$2…</code>是我们要填充的模板变量,常见的模板操作如下</p>
+<table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>模板定义</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ifn</code></td>
+<td><code>if ($1 == null) {}</code></td>
+<td>判空操作</td>
+</tr>
+<tr>
+<td><code>inn</code></td>
+<td><code>if ($1 != null) {}</code></td>
+<td>判非空操作</td>
+</tr>
+<tr>
+<td><code>fori</code></td>
+<td><code>for (int $1 = 0; $1 &lt; $2; $1++) {}</code></td>
+<td>创建索引循环</td>
+</tr>
+<tr>
+<td><code>todo</code></td>
+<td><code>// TODO: $1</code></td>
+<td>添加todo说明</td>
+</tr>
+<tr>
+<td><code>fixme</code></td>
+<td><code>// FIXME: 7/19/16 $1</code></td>
+<td>添加fixme说明</td>
+</tr>
+<tr>
+<td><code>inst</code></td>
+<td><code>if ($1 instanceof $2) {}</code></td>
+<td>类型关系判断</td>
+</tr>
+<tr>
+<td><code>sout</code></td>
+<td><code>System.out.println($1);</code></td>
+<td>标准输出</td>
+</tr>
+</tbody></table>
+<h2 id="后缀完成"><a href="#后缀完成" class="headerlink" title="后缀完成"></a>后缀完成</h2><p><a href="https://blog.jetbrains.com/idea/2014/03/postfix-completion/" target="_blank" rel="noopener">后缀完成</a>是JetBrains系IDE的一项新功能,目的是减少光标经常性的前后移动,其使用惯例为:先使用元素,再考虑变量声明或结构补全.它的主要功能是根据当前元素的属性,提供可能的行为建议,例如使用if-else结构包围,判(非)空,格式化,进行类型转换等,常用的后缀声明如下:</p>
+<table>
+<thead>
+<tr>
+<th>后缀完成关键字</th>
+<th>定义</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>element.<code>sout</code></td>
+<td><code>System.out.println(element);</code></td>
+<td>将当前内容element定位到标准输出流</td>
+</tr>
+<tr>
+<td>element.<code>return</code></td>
+<td><code>return element;</code></td>
+<td>将当前元素element作为返回值</td>
+</tr>
+<tr>
+<td>element.<code>null</code></td>
+<td><code>if (string == null) {}</code></td>
+<td>元素判空操作</td>
+</tr>
+<tr>
+<td>element.<code>notnull</code></td>
+<td>if (string != null) {}</td>
+<td>元素判非空操作</td>
+</tr>
+</tbody></table>
+<h1 id="错误"><a href="#错误" class="headerlink" title="错误"></a>错误</h1><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F2/Shift+F2</td>
+<td>Next/previous hghlighted error</td>
+<td>下一个/上一个错误处,常配合Alt+Enter使用</td>
+</tr>
+<tr>
+<td>Command+F1</td>
+<td>Show desciptions of error</td>
+<td>错误提示信息</td>
+</tr>
+</tbody></table>
+<h1 id="重构"><a href="#重构" class="headerlink" title="重构"></a>重构</h1><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Shift+F6</td>
+<td>Rename</td>
+<td>重命名类/方法/变量</td>
+</tr>
+<tr>
+<td>Ctrl+T</td>
+<td>Refactor This</td>
+<td>开始重构,重构一切</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+F6</td>
+<td>Change Signature</td>
+<td>修改方法签名</td>
+</tr>
+<tr>
+<td>Command+Alt+M</td>
+<td>Extract Method</td>
+<td>重构成方法</td>
+</tr>
+<tr>
+<td>Command+Alt+V</td>
+<td>Extract Variable</td>
+<td>重构成变量</td>
+</tr>
+<tr>
+<td>Command+Alt+F</td>
+<td>Extract Field</td>
+<td>重构成字段</td>
+</tr>
+<tr>
+<td>Command+Alt+C</td>
+<td>Extract Constant</td>
+<td>重构成静态变量</td>
+</tr>
+<tr>
+<td>Command+Alt+P</td>
+<td>Extract Parameter</td>
+<td>重构参数列表</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>F5</td>
+<td>Copy</td>
+<td>拷贝类/目录等</td>
+</tr>
+<tr>
+<td>F6</td>
+<td>Move</td>
+<td>移动类/目录等</td>
+</tr>
+</tbody></table>
+<h1 id="导航"><a href="#导航" class="headerlink" title="导航"></a>导航</h1><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Command+O</td>
+<td>Go to class</td>
+<td>搜索类</td>
+</tr>
+<tr>
+<td>Command+Shift+O</td>
+<td>Go to file</td>
+<td>搜索文件</td>
+</tr>
+<tr>
+<td>Command+Alt+O</td>
+<td>Go to sysbol</td>
+<td>搜索符号</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+L</td>
+<td>Go to line</td>
+<td>跳转到某行</td>
+</tr>
+<tr>
+<td>Command+U</td>
+<td>Go to super-method/super-class</td>
+<td>跳转到父级方法/类</td>
+</tr>
+<tr>
+<td>Command+E</td>
+<td>Recent files popup</td>
+<td>跳到最近编辑过的文件列表</td>
+</tr>
+<tr>
+<td>Command+B</td>
+<td>Go to declaration</td>
+<td>跳转到定义行</td>
+</tr>
+<tr>
+<td>Command+Alt+B</td>
+<td>Go to implementation(s)</td>
+<td>进入接口实现方法</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+F12</td>
+<td>File structure popup</td>
+<td>文件结构弹窗,包含本类及所有基类方法</td>
+</tr>
+<tr>
+<td>Ctrl+H</td>
+<td>Type hierarchy</td>
+<td>类继承体系</td>
+</tr>
+<tr>
+<td>Ctrl+Alt+H</td>
+<td>Call hierarchy</td>
+<td>调用层次结构</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+Shift+F12</td>
+<td>Hide All Tools Window</td>
+<td>隐藏所有工具窗口,代码区最大</td>
+</tr>
+<tr>
+<td>Command+1~9</td>
+<td>Open corresponding tool window</td>
+<td>显示对应工具窗口</td>
+</tr>
+</tbody></table>
+<h1 id="搜索与替换"><a href="#搜索与替换" class="headerlink" title="搜索与替换"></a>搜索与替换</h1><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Shift+Shift</td>
+<td>Search everywhere</td>
+<td>全局搜索</td>
+</tr>
+<tr>
+<td>Alt+F7</td>
+<td>Find usages</td>
+<td>查找引用点</td>
+</tr>
+<tr>
+<td>Command+Alt+F7</td>
+<td>Show usages</td>
+<td>展示引用点</td>
+</tr>
+<tr>
+<td>Command+Shift+F7</td>
+<td>Highlight usages in file</td>
+<td>高亮文件内引用点</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+F</td>
+<td>Find</td>
+<td>文件内查找</td>
+</tr>
+<tr>
+<td>Command+Shift+F</td>
+<td>Find in path</td>
+<td>项目内查找</td>
+</tr>
+<tr>
+<td>Command+G/Command+Shift+G</td>
+<td>Find next/previous</td>
+<td>按选择字符查找下一个/上一个</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command+R</td>
+<td>Replace</td>
+<td>替换字符</td>
+</tr>
+<tr>
+<td>Command+Shift+R</td>
+<td>Replace in path</td>
+<td>项目内替换</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Ctrl+G</td>
+<td>Select next occurrence</td>
+<td>选择下一个所选文本内容,可同时编辑</td>
+</tr>
+<tr>
+<td>Ctrl+Command+G</td>
+<td>Select all occurrences</td>
+<td>选择全部相同文本，可同时编辑</td>
+</tr>
+</tbody></table>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/%E9%AB%98%E6%95%88/">高效</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%BC%80%E5%8F%91/">开发</a>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%BF%AB%E4%B8%8E%E6%85%A2/">快与慢</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/02/09/%E6%B7%B1%E5%85%A5Flutter%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95_Platform%20Channel%E5%8E%9F%E7%90%86/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入Flutter技术内幕:Platform Channel设计与实现(一)</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2018/09/25/OpenJDK%E7%B3%BB%E5%88%97(%E5%9B%9B)_%E4%BB%8EJVM%E8%B0%88C:C++%E7%BC%96%E8%AF%91%E6%B5%81%E7%A8%8B/">
+                        <span class="hidden-mobile">OpenJDK系列(四):从JVM谈C/C++编译流程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "思考快与慢(一):高效开发之Intellij IDEA&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

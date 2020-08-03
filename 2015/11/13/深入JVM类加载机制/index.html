@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>谈JVM类加载机制 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2015-11-13 14:13">
+                    2015年11月13日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    4.3k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    48
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="类加载机制"><a href="#类加载机制" class="headerlink" title="类加载机制"></a>类加载机制</h1><p> 虚拟机将class文件加载到内存，并对数据校验、转换解析和初始化，最终形成可以被虚拟机直接使用的java类型。在java中语言中类的加载、连接和初始化过程都是在程序运行期间完成的，因此在类加载时的效率相对编译型语言较低，除此之外，只有在任何一个类只有在运行期间使用到该类的时候才会将该类加到内存中。总之，java依赖于运行期间动态加载和动态链接来实现类的动态使用。其整个流程如下：</p>
+<p>  <img src="https://i.imgur.com/S0Vifmh.png" srcset="/img/loading.gif" alt="image-20180721131144810"></p>
+<p>  其中加载、检验、准备、初始化和卸载这个五个阶段的顺序是固定的，而解析则未必。为了支持动态绑定，解析这个过程可以发生在初始化阶段之后。另外，这个过程表示的是按顺序开始，不是所谓的第一步、第二步、第三步的关系，而往往是交叉混合进行，在一个阶段中可能调用或者激活另一个过程。<br>  java中，对于初始化阶段，有且只有以下五种情况才会对要求类立刻“初始化”：</p>
+<ol>
+<li>使用new关键字实例化对象、访问或者设置一个类的静态字段（被final修饰、编译器优化时已经放入常量池的例外）、调用类方法，都会初始化该静态字段或者静态方法所在的类。</li>
+<li>初始化类的时候，如果其父类没有被初始化过，则要先触发其父类初始化。</li>
+<li>使用java.lang.reflect包的方法进行反射调用的时候，如果类没有被初始化，则要先初始化。</li>
+<li>虚拟机启动时，用户会先初始化要执行的主类（含有main）</li>
+<li>jdk 1.7后，如果java.lang.invoke.MethodHandle的实例最后对应的解析结果是 REF_getStatic、REF_putStatic、REF_invokeStatic方法句柄，并且这个方法所在类没有初始化，则先初始化。</li>
+</ol>
+<p>按照以上流程，我们重点来看<code>加载-校验-准备-解析-初始化</code>五个阶段。</p>
+<h2 id="加载阶段"><a href="#加载阶段" class="headerlink" title="加载阶段"></a>加载阶段</h2><p>加载过程主要完成三件事情：</p>
+<ol>
+<li>通过类的全限定名来获取定义此类的二进制字节流</li>
+<li>将这个类字节流代表的静态存储结构转为方法区的运行时数据结构</li>
+<li>在堆中生成一个代表此类的java.lang.Class对象，作为访问方法区这些数据结构的入口。</li>
+</ol>
+<p>这个过程主要就是类加载器完成。（对于HotSpot虚拟而言，Class对象较为特殊，其被放置在方法区而不是堆中）</p>
+<h2 id="校验阶段"><a href="#校验阶段" class="headerlink" title="校验阶段"></a>校验阶段</h2><p>此阶段主要确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机的自身安全。主要包括以下四个阶段：</p>
+<ol>
+<li>文件格式验证：基于字节流验证，验证字节流符合当前的Class文件格式的规范，能被当前虚拟机处理。验证通过后，字节流才会进入内存的方法区进行存储。</li>
+<li>元数据验证：基于方法区的存储结构验证，对字节码进行语义验证，确保不存在不符合java语言规范的元数据信息。</li>
+<li>字节码验证：基于方法区的存储结构验证，通过对数据流和控制流的分析，保证被检验类的方法在运行时不会做出危害虚拟机的动作。</li>
+<li>符号引用验证：基于方法区的存储结构验证，发生在解析阶段，确保能够将符号引用成功的解析为直接引用，其目的是确保解析动作正常执行。换句话说就是对类自身以外的信息进行匹配性校验。 </li>
+</ol>
+<h2 id="准备阶段"><a href="#准备阶段" class="headerlink" title="准备阶段"></a>准备阶段</h2><p>仅仅为类变量（static修饰的变量）分配内存空间并且设置该类变量的初始值（这里的初始值指的是数据类型默认的零值），这里不包含用final修饰的static，因为用final修饰的类变量在javac执行编译期间就会分配，同时要注意，这里不会为实例变量分配初始化。类变量会分配在方法区中，而实例变量会在对象实例化是随着对象一起被分配在java堆中。举例：</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> value=<span class="hljs-number">33</span>;</code></pre>
+
+<p>这据代码的赋值过程分两次，一是上面我们提到的阶段，此时的value将会被赋值为0；而value=33这个过程发生在类构造器的<code>&lt;clinit&gt;()</code>方法中。</p>
+<h2 id="解析阶段"><a href="#解析阶段" class="headerlink" title="解析阶段"></a>解析阶段</h2><p>解析阶段主要是将常量池内的符号引用替换为直接引用的过程。符号引用是用一组符号来描述目标，可以是任何字面量，而直接引用则是直接指向目标的指针、相对偏移量或一个间接定位到目标的句柄。通常而言一个符号引用在不同虚拟机实例翻译出来的直接引用一般不会相同。<br>和C之类的纯编译型语言不同，Java类文件在编译过程中只会生成class文件，并不会进行连接操作，这意味在编译阶段Java类并不知道引用类的实际地址，因此只能用“符号引用”来代表引用类。举个例子来说明，在com.sbbic.Person类中引用了com.sbbic.Animal类，在编译阶段，Person类并不知道Animal的实际内存地址，因此只能用com.sbbic.Animal来代表Animal真实的内存地址。在解析阶段，JVM可以通过解析该符号引用，来确定com.sbbic.Animal类的真实内存地址（如果该类未被加载过，则先加载）。<br>主要有以下四种：</p>
+<ol>
+<li>类或接口的解析</li>
+<li>字段解析</li>
+<li>类方法解析</li>
+<li>接口方法解析</li>
+</ol>
+<h2 id="初始化阶段"><a href="#初始化阶段" class="headerlink" title="初始化阶段"></a>初始化阶段</h2><p>类加载过程的最后一步，到该阶段才真正开始执行类中定义的java代码，同样该阶段也是初始化类变量和其他资源（执行static字段和静态代码块），换句话说该阶段是执行类构造器<code>&lt;clinit&gt;()</code>方法的过程。<br><code>&lt;clinit&gt;</code>()方法是由编译器自动收集类中所有的类变量的赋值动作和静态语句块（static{}）中的语句合并而成。<code>&lt;clinit&gt;()</code>方法和实例构造方法不同<code>&lt;init&gt;()</code>不同，它不需要显示的调用父类的<code>&lt;clinit&gt;()</code>，虚拟机会保证父类<code>的&lt;clinit&gt;(</code>)方法在子类的<code>&lt;clinit&gt;()</code>方法之前执行完成，也就是说，父类的静态语句块和静态变量优先于子类中变量赋值操作。<br><code>&lt;clinit&gt;()</code>方法对于类或者接口来说并不是必需的，如果一个类中没有静态语句块，也没有对变量赋值的操作，那么编译器就不会为这个类生<code>成&lt;clinit&gt;(</code>)方法。接口中不能使用静态语句块，单仍然有变量赋值的操作，所以仍然可以生成<code>&lt;clinit&gt;(</code>)方法，但与类不同的执行接口<code>&lt;clinit&gt;()</code>方法不需要先执行父接口的<code>&lt;clinit&gt;()</code>方法，另外，接口的实现类在初始化时也一样不会执行接口的<code>&lt;clinit&gt;()</code>方法。</p>
+<h1 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h1><p>把类加载阶段的“通过一个类的全限定名来获取描述此类的二进制字节流”这个动作交给虚拟机之外的类加载器来完成。这样的好处在于，我们可以自行实现类加载器来加载其他格式的类，只要是二进制字节流就行，这就大大增强了加载器灵活性。</p>
+<p>通常系统自带的类加载器分为三种：</p>
+<ul>
+<li>启动类加载器</li>
+<li>扩展类加载器</li>
+<li>应用类加载器</li>
+</ul>
+<p><strong>启动类加载器</strong>(Bootstrap ClassLoader):由C/C++实现,负责加载<code>&lt;JAVA_HOME&gt;\jre\lib</code>目录下或者是-Xbootclasspath所指定路径下目录以及系统属性sun.boot.class.path制定的目录中特定名称的jar包到虚拟机内存中。在JVM启动时,通过Bootstrap ClassLoader加载rt.jar,并初始化sun.misc.Launcher从而创建Extension ClassLoader和Application ClassLoader的实例.</p>
+<p>需要注意的是,Bootstrap ClassLoader智慧加载特定名称的类库,比如rt.jar.这意味我们自定义的jar扔到<code>&lt;JAVA_HOME&gt;\jre\lib</code>也不会被加载.我们可以通过以下代码,查看Bootstrap ClassLoader到底初始化了那些类库:</p>
+ <pre><code class="hljs java">URL[] urLs = Launcher.getBootstrapClassPath().getURLs();
+     <span class="hljs-keyword">for</span> (URL urL : urLs) &#123;
+         System.out.println(urL.toExternalForm());
+     &#125;</code></pre>
+
+<p><strong>扩展类加载器</strong>（Extension Classloader）：只有一个实例,由sun.misc.Launcher$ExtClassLoader实现,负责加载<code>&lt;JAVA_HOME&gt;\lib\ext</code>目录下或是被系统属性java.ext.dirs所指定路径目录下的所有类库。</p>
+<p><strong>应用类加载器</strong>(Application ClassLoader):只有一个实例,由sun.misc.Launcher$AppClassLoader实现,负责加载系统环境变量ClassPath或者系统属性java.class.path制定目录下的所有类库，如果应用程序中没有定义自己的加载器，则该加载器也就是默认的类加载器.该加载器可以通过以下获取：</p>
+<p><code>java.lang.ClassLoader.getSystemClassLoader</code></p>
+<p>以上三种是我们经常认识最多,除此之外还包括<strong>线程上下文类加载器</strong>(Thread Context ClassLoader)和<strong>自定义类加载器</strong>.</p>
+<p>每个线程都有一个类加载器(jdk 1.2后引入),称之为Thread Context ClassLoader,即线程上下文类加载器,如果线程创建时没有设置,则默认从父线程中继承一个,如果在应用全局内都没有设置,则所有线程上下文类加载器就是Application ClassLoader.可通过Thread.currentThread().setContextClassLoader(ClassLoader)来设置,通过Thread.currentThread().getContextClassLoader()来获取.</p>
+<p>我们来想想线程上下文加载器有什么用的?该类加载器容许父类加载器通过子类加载器加载所需要的类库,也就是打破了我们下文所说的双亲委派模型.这有什么好处呢?利用线程上下文加载器,我们能够实现所有的代码热替换,热部署,Android中的热更新原理也是借鉴如此的.</p>
+<p>至于自定义加载器就更简单了,JVM运行我们通过自定义的ClassLoader加载相关的类库.</p>
+<h2 id="双亲委派模型"><a href="#双亲委派模型" class="headerlink" title="双亲委派模型"></a>双亲委派模型</h2><p>当一个类加载器收到一个类加载的请求，它首先会将该请求委派给父类加载器去加载，每一个层次的类加载器都是如此，因此所有的类加载请求最终都应该被传入到顶层的启动类加载器(Bootstrap ClassLoader)中，只有当父类加载器反馈无法完成这个列的加载请求时（它的搜索范围内不存在这个类），子类加载器才尝试加载。其层次结构示意图如下：</p>
+<p><img src="https://i.imgur.com/uAEqUUe.png" srcset="/img/loading.gif" alt="image-20180721131241091"></p>
+<p>不难发现,该种加载流程的好处在于：</p>
+<ol>
+<li>可以避免重复加载，父类已经加载了，子类就不需要再次加载</li>
+<li>更加安全，很好的解决了各个类加载器的基础类的统一问题，如果不使用该种方式，那么用户可以随意定义类加载器来加载核心api，会带来相关隐患。</li>
+</ol>
+<p>接下来,我们看看双亲委派模型是如何实现的：</p>
+<pre><code class="hljs java"><span class="hljs-keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="hljs-keyword">boolean</span> resolve)
+       <span class="hljs-keyword">throws</span> ClassNotFoundException
+   &#123;
+       <span class="hljs-keyword">synchronized</span> (getClassLoadingLock(name)) &#123;
+           <span class="hljs-comment">// 首先先检查该类已经被加载过了</span>
+           Class c = findLoadedClass(name);
+           <span class="hljs-keyword">if</span> (c == <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">//该类没有加载过，交给父类加载</span>
+               <span class="hljs-keyword">long</span> t0 = System.nanoTime();
+               <span class="hljs-keyword">try</span> &#123;
+                   <span class="hljs-keyword">if</span> (parent != <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">//交给父类加载</span>
+                       c = parent.loadClass(name, <span class="hljs-keyword">false</span>);
+                   &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//父类不存在，则交给启动类加载器加载</span>
+                       c = findBootstrapClassOrNull(name);
+                   &#125;
+               &#125; <span class="hljs-keyword">catch</span> (ClassNotFoundException e) &#123;
+                  <span class="hljs-comment">//父类加载器抛出异常，无法完成类加载请求</span>
+               &#125;
+
+               <span class="hljs-keyword">if</span> (c == <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">//</span>
+                   <span class="hljs-keyword">long</span> t1 = System.nanoTime();
+                   <span class="hljs-comment">//父类加载器无法完成类加载请求时，调用自身的findClass方法来完成类加载</span>
+                   c = findClass(name);
+                   sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                   sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                   sun.misc.PerfCounter.getFindClasses().increment();
+               &#125;
+           &#125;
+           <span class="hljs-keyword">if</span> (resolve) &#123;
+               resolveClass(c);
+           &#125;
+           <span class="hljs-keyword">return</span> c;
+       &#125;
+   &#125;</code></pre>
+
+<p>这里有些童鞋会问,JVM怎么知道一个某个类加载器的父加载器呢?如果你有此疑问,请重新再看一遍.</p>
+<h2 id="类加载器的特点"><a href="#类加载器的特点" class="headerlink" title="类加载器的特点"></a>类加载器的特点</h2><ol>
+<li>运行任何一个程序时，总是由Application Loader开始加载指定的类。</li>
+<li>一个类在收到加载类请求时，总是先交给其父类尝试加载。</li>
+<li>Bootstrap Loader是最顶级的类加载器，其父加载器为null。</li>
+</ol>
+<h2 id="类加载的方式"><a href="#类加载的方式" class="headerlink" title="类加载的方式"></a>类加载的方式</h2><ol>
+<li>通过命令行启动应用时由JVM初始化加载含有main()方法的主类。</li>
+<li>通过Class.forName()方法动态加载，会默认执行初始化块（static{}），但是Class.forName(name,initialize,loader)中的initialze可指定是否要执行初始化块。</li>
+<li>通过ClassLoader.loadClass()方法动态加载，不会执行初始化块。</li>
+</ol>
+<h2 id="自定义类加载器"><a href="#自定义类加载器" class="headerlink" title="自定义类加载器"></a>自定义类加载器</h2><p>1、遵守双亲委派模型：继承ClassLoader，重写findClass()方法。<br>2、破坏双亲委派模型：继承ClassLoader,重写loadClass()方法。<br>通常我们推荐采用第一种方法自定义类加载器，最大程度上的遵守双亲委派模型。<br>自定义类加载的目的是想要手动控制类的加载,那除了通过自定义的类加载器来手动加载类这种方式,还有其他的方式么?<br>利用现成的类加载器进行加载:</p>
+<pre><code class="hljs java"><span class="hljs-number">1</span>. 利用当前类加载器
+Class.forName();
+
+<span class="hljs-number">2</span>. 通过系统类加载器
+Classloader.getSystemClassLoader().loadClass();
+
+<span class="hljs-number">3</span>. 通过上下文类加载器
+Thread.currentThread().getContextClassLoader().loadClass();</code></pre>
+
+<p>利用URLClassLoader进行加载:</p>
+<pre><code class="hljs java">URLClassLoader loader=<span class="hljs-keyword">new</span> URLClassLoader();
+loader.loadClass();</code></pre>
+
+<p><strong>类加载实例演示：</strong><br>命令行下执行HelloWorld.java</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloWorld</span></span>&#123;
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span></span>&#123;
+        System.out.println(<span class="hljs-string">"Hello world"</span>);
+    &#125;
+&#125;</code></pre>
+
+<p>该段代码大体经过了一下步骤:</p>
+<ol>
+<li>寻找jre目录，寻找jvm.dll，并初始化JVM.</li>
+<li>产生一个Bootstrap ClassLoader；</li>
+<li>Bootstrap ClassLoader加载器会加载他指定路径下的java核心api，并且生成Extended ClassLoader加载器的实例，然后Extended ClassLoader会加载指定路径下的扩展java api，并将其父设置为Bootstrap ClassLoader。</li>
+<li>Bootstrap ClassLoader生成Application ClassLoader，并将其父Loader设置为Extended ClassLoader。</li>
+<li>最后由AppClass ClassLoader加载classpath目录下定义的类——HelloWorld类。</li>
+</ol>
+<p>我们上面谈到 Extended ClassLoader和Application ClassLoader是通过Launcher来创建,现在我们再看看源代码:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Launcher</span><span class="hljs-params">()</span> </span>&#123;
+       Launcher.ExtClassLoader var1;
+       <span class="hljs-keyword">try</span> &#123;
+        <span class="hljs-comment">//实例化ExtClassLoader</span>
+           var1 = Launcher.ExtClassLoader.getExtClassLoader();
+       &#125; <span class="hljs-keyword">catch</span> (IOException var10) &#123;
+           <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InternalError(<span class="hljs-string">"Could not create extension class loader"</span>, var10);
+       &#125;
+
+       <span class="hljs-keyword">try</span> &#123;
+           <span class="hljs-comment">//实例化AppClassLoader</span>
+           <span class="hljs-keyword">this</span>.loader = Launcher.AppClassLoader.getAppClassLoader(var1);
+       &#125; <span class="hljs-keyword">catch</span> (IOException var9) &#123;
+           <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InternalError(<span class="hljs-string">"Could not create application class loader"</span>, var9);
+       &#125;
+	<span class="hljs-comment">//主线程设置默认的Context ClassLoader为AppClassLoader.</span>
+	<span class="hljs-comment">//因此在主线程中创建的子线程的Context ClassLoader 也是AppClassLoader</span>
+       Thread.currentThread().setContextClassLoader(<span class="hljs-keyword">this</span>.loader);
+       String var2 = System.getProperty(<span class="hljs-string">"java.security.manager"</span>);
+       <span class="hljs-keyword">if</span>(var2 != <span class="hljs-keyword">null</span>) &#123;
+           SecurityManager var3 = <span class="hljs-keyword">null</span>;
+           <span class="hljs-keyword">if</span>(!<span class="hljs-string">""</span>.equals(var2) &amp;&amp; !<span class="hljs-string">"default"</span>.equals(var2)) &#123;
+               <span class="hljs-keyword">try</span> &#123;
+                   var3 = (SecurityManager)<span class="hljs-keyword">this</span>.loader.loadClass(var2).newInstance();
+               &#125; <span class="hljs-keyword">catch</span> (IllegalAccessException var5) &#123;
+                   ;
+               &#125; <span class="hljs-keyword">catch</span> (InstantiationException var6) &#123;
+                   ;
+               &#125; <span class="hljs-keyword">catch</span> (ClassNotFoundException var7) &#123;
+                   ;
+               &#125; <span class="hljs-keyword">catch</span> (ClassCastException var8) &#123;
+                   ;
+               &#125;
+           &#125; <span class="hljs-keyword">else</span> &#123;
+               var3 = <span class="hljs-keyword">new</span> SecurityManager();
+           &#125;
+
+           <span class="hljs-keyword">if</span>(var3 == <span class="hljs-keyword">null</span>) &#123;
+               <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InternalError(<span class="hljs-string">"Could not create SecurityManager: "</span> + var2);
+           &#125;
+
+           System.setSecurityManager(var3);
+       &#125;
+
+   &#125;</code></pre>
+
+
+
+<h2 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h2><p>在明确上述内容之后，来思考几个问题:</p>
+<ol>
+<li>我们知道ClassLoader通过一个类的全限定名来获取二进制流,那么如果我们需要通过自定义类加载其来加载一个Jar包的时候,难道要自己遍历jar中的类,然后依次通过ClassLoader进行加载吗?或者说我们怎么来加载一个jar包呢?</li>
+<li>如果一个类引用的其他的类,那么这个其他的类由谁来加载?</li>
+<li>既然类可以由不同的加载器加载,那么如何确定两个类如何是同一个类?</li>
+</ol>
+<p>我们来依次解答这两个问题:<br>对于动态加载jar而言,JVM默认会使用第一次加载该jar中指定类的类加载器作为默认的ClassLoader.假设我们现在存在名为sbbic的jar包,该包中存在ClassA和ClassB这两个类(ClassA中没有引用ClassB).现在我们通过自定义的ClassLoaderA来加载在ClassA这个类,那么此时此时ClassLoaderA就成为sbbic.jar中其他类的默认类加载器.也就是,ClassB也默认会通过ClassLoaderA去加载.</p>
+<p>那么如果ClassA中引用了ClassB呢?当类加载器在加载ClassA的时候,发现引用了ClassB,此时类加载如果检测到ClassB还没有被加载,则先回去加载.当ClassB加载完成后,继续回来加载ClassA.换句话说,类会通过自身对应的来加载其加载其他引用的类.</p>
+<p>JVM规定,对于任何一个类,都需要由加载它的类加载器和这个类本身一同确立在java虚拟机中的唯一性,通俗点就是说,在jvm中判断两个类是否是同一个类取决于类加载和类本身,也就是同一个类加载器加载的同一份Class文件生成的Class对象才是相同的,类加载器不同,那么这两个类一定不相同.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JVM/">JVM</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Classloader/">Classloader</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2015/12/01/StringBuilder%E5%92%8CStringBuilder%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">StringBuilder & StringBuffer设计与实现</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2015/11/01/%E6%B7%B1%E5%85%A5JVM%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/">
+                        <span class="hidden-mobile">谈JVM内存区域</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "谈JVM类加载机制&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

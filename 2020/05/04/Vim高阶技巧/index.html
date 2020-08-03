@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Vim高级使用技巧 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2020-05-04 21:47">
+                    2020年5月4日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2.3k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    26
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="Vim重复命令"><a href="#Vim重复命令" class="headerlink" title="Vim重复命令"></a>Vim重复命令</h1><h2 id="命令"><a href="#命令" class="headerlink" title=".命令"></a>.命令</h2><p>.命令用于”重复上次的修改”,可以通过<code>:h .</code>来查看其更多用法,实际上.命令是一个微型的宏:从进入插入模式的那一刻起(例如输入i),直到返回普通模式为止(输入<Esc>),Vim会记录每一个按键的操作.做出这样的一个修改后再通.命令的话,它将会执行所有这些按键的操作.</p>
+<p>可重复的操作</p>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>操作</th>
+<th>重复</th>
+<th>回退</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>做出一个修改</td>
+<td><code>{edit}</code></td>
+<td>.</td>
+<td>u</td>
+</tr>
+<tr>
+<td>在行内查找下一个指定字符</td>
+<td><code>f{char}/t{char}</code></td>
+<td>;</td>
+<td>.</td>
+</tr>
+<tr>
+<td>在行内查找上一个指定字符</td>
+<td><code>F{char}/T{char}</code></td>
+<td>;</td>
+<td>.</td>
+</tr>
+<tr>
+<td>在文档中查找下一处匹配项</td>
+<td><code>/pattern&lt;CR&gt;</code></td>
+<td>n</td>
+<td>N</td>
+</tr>
+<tr>
+<td>在文档中查找上一处匹配项</td>
+<td><code>?pattern&lt;CR&gt;</code></td>
+<td>n</td>
+<td>N</td>
+</tr>
+<tr>
+<td>执行替换</td>
+<td><code>:s/target/replacement</code></td>
+<td>&amp;</td>
+<td>u</td>
+</tr>
+<tr>
+<td>执行一系列修改</td>
+<td><code>qx{changes}q</code></td>
+<td>@x</td>
+<td>u</td>
+</tr>
+</tbody></table>
+<p>dd: 删除一行;</p>
+<p>u:撤销上次操作;</p>
+<p><code>&gt;G</code>:增加从当前行到文档末尾处的缩进层级;</p>
+<p>a: 在当前光标之后添加内容;</p>
+<p>A: 在当前行的结尾添加内容;</p>
+<p>s:先删除光标下的字符,然后进入插入模式.比如我们要将<code>+argument</code>修改为<code>+ argument</code>,那么就可以执行<code>s + &lt;Esc&gt;</code>.</p>
+<p>f:查找下一处指定字符出现的位置,比如<code>f+</code>会查找加号出现的位置;而<code>;</code>会重复上次<code>f</code>命令所查找的字符;’,’命令会反方向炒作`f``所查找的字符.</p>
+<p>*:查找当前光标下的单词:光标会跳到下一个匹配项,所有出现这个词的地方都会被高亮(如果没有高亮,执行<code>:set hls</code>)</p>
+<p>cw: 删除从光标位置到单词结尾见的字符,并进入插入模式.</p>
+<h1 id="普通模式"><a href="#普通模式" class="headerlink" title="普通模式"></a>普通模式</h1><h2 id="反向删除"><a href="#反向删除" class="headerlink" title="反向删除"></a>反向删除</h2><p>正向删除</p>
+<p>db命令会删除从光标起始位置到单词开头的内容,但会留下起始的字符,比如nigh单词中,如果光标处于h位置,name通过db操作后,最后会留下h.</p>
+<h1 id="命令模式"><a href="#命令模式" class="headerlink" title="命令模式"></a>命令模式</h1><p>在按下<code>:</code>键时,Vim会切换到命令行模式.在此模式下执行的命令成为ex命令,可以用ex命令读写文件(:edit和:write),创建新的标签页(:tabnew),分割窗口(:split)等,更多使用查阅<code>:h ex-cmd-index</code>.</p>
+<p>大多数ex命令可以指定操作范围.,常见的ex命令如下所示:</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>:[range]delete [x]</code></td>
+<td>删除指定范围内的行[到寄存器x中]</td>
+</tr>
+<tr>
+<td><code>:[range]yank [x]</code></td>
+<td>复制指定范围内的行[到寄存器x中]</td>
+</tr>
+<tr>
+<td><code>:[line]put [x]</code></td>
+<td>在照顾度不够刚归一粘贴寄存器x中的内容</td>
+</tr>
+<tr>
+<td><code>:[range]copy {address}</code></td>
+<td>把指定范围内的行拷贝到 {address} 指定的行之下</td>
+</tr>
+<tr>
+<td><code>:[range]move {address}</code></td>
+<td>把指定范围内的行移动到 {address} 指定的行之下</td>
+</tr>
+<tr>
+<td><code>:[rage]join</code></td>
+<td>连接指定范围的行</td>
+</tr>
+<tr>
+<td><code>:[range] normal {commands}</code></td>
+<td>对指定范围内的每一行执行普通模式命令 {commands}</td>
+</tr>
+<tr>
+<td><code>:[range]substitute/{pattern}/{string}/[flags]</code></td>
+<td>把指定范围内出现{pattern}的地方替换为{string}</td>
+</tr>
+<tr>
+<td><code>[range]global/{pattern}/[cmd]</code></td>
+<td>对指定范围内匹配{pattern}的所有行执行ex命令{cmd}</td>
+</tr>
+</tbody></table>
+<h2 id="选中行-范围"><a href="#选中行-范围" class="headerlink" title="选中行/范围"></a>选中行/范围</h2><h3 id="跳转到指定行"><a href="#跳转到指定行" class="headerlink" title="跳转到指定行"></a>跳转到指定行</h3><p>如果输入一条只包含数字的ex命令,那么vim会把它解析城一个地址,跳转到该数字指定的行上.</p>
+<pre><code class="hljs shell"><span class="hljs-meta">#</span><span class="bash"> 跳转到低三行,并显示该行内容</span>
+:3p</code></pre>
+
+<p>上述命令实际是哪个是吧<code>:3</code>和<code>:p</code>两条命令合起来.</p>
+<h3 id="使用地址指定范围"><a href="#使用地址指定范围" class="headerlink" title="使用地址指定范围"></a>使用地址指定范围</h3><p><code>:{start},{end}</code>: {start}和{end}分别表示起始地址.需要注意,除了使用行号作为地址外,也能使用查找模式或是位置标记作为地址.</p>
+<p>符合<code>.</code>表示当前行地址,比如<code>.,$p</code>表示从当前位置到文件末尾的所有行.符号%在命令模式下又特殊含义,表示当前文件的所有行.<code>:%p</code>和<code>:1,$p</code>是等价的,都是显式所有行.</p>
+<h3 id="用高亮选区指定范围"><a href="#用高亮选区指定范围" class="headerlink" title="用高亮选区指定范围"></a>用高亮选区指定范围</h3><p>当使用选择模式选中范围后,再按<code>:</code>,命令行上会预先填充一个范围<code>:&#39;&lt;,&#39;&gt;</code>,在这里<code>&#39;&lt;</code>表示高亮选区首行的位置标记,<code>&#39;&gt;</code>则表示高亮选区的最后一行.</p>
+<h3 id="用模式指定范围"><a href="#用模式指定范围" class="headerlink" title="用模式指定范围"></a>用模式指定范围</h3><p>在该模式下也接受以模式作为一条ex命令的地址,比如<code>:/&lt;html&gt;/,/&lt;\html&gt;/p</code>.</p>
+<h3 id="使用偏移地址"><a href="#使用偏移地址" class="headerlink" title="使用偏移地址"></a>使用偏移地址</h3><p><code>:{address}+n</code>,n被省略表示偏移量为1.{address}可以是行号,位置标记或者查找模式.比如想对当前行开始的特定几行执行ex命令:</p>
+<pre><code class="hljs shell">:2
+:.,.+2p</code></pre>
+
+<p>最终相当于执行了<code>:2,5p</code>.</p>
+<p>常用符号</p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>文件的第一行</td>
+</tr>
+<tr>
+<td>$</td>
+<td>文件的最后一行</td>
+</tr>
+<tr>
+<td>0</td>
+<td>虚拟化,位于文件第一行上方</td>
+</tr>
+<tr>
+<td>.</td>
+<td>光标所在行</td>
+</tr>
+<tr>
+<td>‘m</td>
+<td>包含位置比较m的行</td>
+</tr>
+<tr>
+<td>‘&lt;</td>
+<td>高亮选区的起始行</td>
+</tr>
+<tr>
+<td>‘&gt;</td>
+<td>高亮选区的结束行</td>
+</tr>
+<tr>
+<td>%</td>
+<td>整个文件(:,$的简写形式)</td>
+</tr>
+</tbody></table>
+<h2 id="复制-移动指定行"><a href="#复制-移动指定行" class="headerlink" title="复制/移动指定行"></a>复制/移动指定行</h2><h3 id="复制"><a href="#复制" class="headerlink" title="复制"></a>复制</h3><p><code>:copy</code>命令可以让我们吧一行或者多行从文档的一部分复制到另一部分,格式为<code>:[range]copy {address}</code>.可以简写为<code>:co</code>,该命令也等价于<code>:t</code>(理解为复制到,即copy To更好记).</p>
+<pre><code class="hljs shell">:6copy. 							# 复制第6行到当前行下
+:6t.
+:t6										# 把当前行复制到第6行下方
+:t.										# 类似yyp,为当前行创建副本
+:t$										# 把当前行复制文本结尾
+:'&lt;,'&gt;t0							# 把高亮选中的行复制到文件开头</code></pre>
+
+<h3 id="移动"><a href="#移动" class="headerlink" title="移动"></a>移动</h3><p><code>:move</code>命令可以让我们把一行或多行移动到文档的另一位置,格式为<code>:[range]move {address}</code>,可以简写为<code>:m</code>.</p>
+<h2 id="在指定范围内执行普通模式命令"><a href="#在指定范围内执行普通模式命令" class="headerlink" title="在指定范围内执行普通模式命令"></a>在指定范围内执行普通模式命令</h2><p><code>:normal</code>命令可以在一些列连续行上执行一套普通模式命令.比如批量在句子后添加分好或者注释多行:</p>
+<pre><code class="hljs shell">: %normal A;				# 在文件的每行结尾添加分好
+
+: %normal i//				# 在文件的每行开头添加//以注释</code></pre>
+
+
+
+<h2 id="重复上次的ex命令"><a href="#重复上次的ex命令" class="headerlink" title="重复上次的ex命令"></a>重复上次的ex命令</h2><p><code>.</code>命令用于重复上次的修改,但是不会重复由Vim命令行中做出的修改.作为替代,可以用<code>@:</code>来重复上次的ex命令,具体可见<code>:h @:</code></p>
+<h2 id="自动补全ex命令"><a href="#自动补全ex命令" class="headerlink" title="自动补全ex命令"></a>自动补全ex命令</h2><p>在命令行业可以使用<code>Tab</code>键进行补全.此外<code>C-d</code>命令会上Vim显示可用的补全列表:</p>
+<pre><code class="hljs shell">:colorscheme
+blue        default     desert      evening     industry    koehler     morning     pablo       peaksea     ron         slate       torte
+darkblue    delek       elflord     gruvbox     ir_black    mayansmoke  murphy      peachpuff   pyte        shine       solarized   zellner
+:colorscheme</code></pre>
+
+<p>可以通过<code>wildmode</code>来自定义自动补全行为,具体参考<code>:h &#39;wildmode&#39;</code>.通常我们会是哟好难过zsh提供的自动补全模式:</p>
+<pre><code class="hljs shell">set wildmenu
+set wildmode=full</code></pre>
+
+<h2 id="把当前单词插入命令行"><a href="#把当前单词插入命令行" class="headerlink" title="把当前单词插入命令行"></a>把当前单词插入命令行</h2><p>在Vim命令行下,<code>&lt;C-r&gt;&lt;C-w&gt;</code>会复制光标下的单词并把它插入命令行中.如果想插入光标下的自传,可以使用<code>&lt;C-r&gt;&lt;C-a&gt;</code>,具体可查阅<code>:h c_CTRL-R_CTRL-W</code>.</p>
+<p>有个非常好用的,在vimrc中可以通过该功能快速查看不认识的设置项:将光标移到其中的一项设置上,然后输入<code>:h &lt;C-r&gt;&lt;C-w&gt;</code>,就可以查阅该设置的文档了.</p>
+<h2 id="回溯ex历史"><a href="#回溯ex历史" class="headerlink" title="回溯ex历史"></a>回溯ex历史</h2><p>Vim会记录命令行模式下的历史命令.在输入<code>:</code>的前提下,使用方向上下键可回溯.默认Vim会记录20条,但是可以将下属配置添加到vimrc中:</p>
+<pre><code class="hljs shell">set history=500</code></pre>
+
+<p>在回溯历史中最常用的是命令行窗口,它是一个常规的Vim缓冲区,它的每行内容都对应着命令历史中的一个条目,可以使用<code>k</code>,<code>j</code>上下移动,可以使用查找功能.在按下<code>&lt;CR&gt;</code>键时,会把当前命令行中的内容当初ex命令执行.</p>
+<p>此外在该模式下,允许使用Vim完整的,区分模式的编辑能力来修改历史命令,比如合并等.普通模式下按<code>q:</code>调出命令行窗口.</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>q/</code></td>
+<td>打开查找命令历史的窗口</td>
+</tr>
+<tr>
+<td><code>q:</code></td>
+<td>打开ex命令历史的命令行窗口</td>
+</tr>
+<tr>
+<td><code>&lt;Ctrl-f&gt;</code></td>
+<td>从命令行模式切换到命令行窗口</td>
+</tr>
+</tbody></table>
+<p><img src="https://i.imgur.com/pMReD6l.png" srcset="/img/loading.gif" alt="image-20200504153757969"></p>
+<h2 id="运行shell命令"><a href="#运行shell命令" class="headerlink" title="运行shell命令"></a>运行shell命令</h2><p>在Vim的命令行模式下,给命令加<code>!</code>前缀就可以调用外部程序,具体可见<code>:h !</code>.</p>
+<pre><code class="hljs shell">:!ls
+[No write since last change]
+Vim使用技巧.assets
+Vim使用技巧.md
+shell编程笔记_convert.md
+技术-Android
+技术-Flutter
+技术-前端</code></pre>
+
+<p>需要注意<code>:ls</code>和<code>:!ls</code>不同:前者是vim的内置命令,后者调用的是shell的ls命令.</p>
+<p>在Vim的命令行中,符号%代表当前文件名.在有些情况下,我们可能正在开发一个shell脚本,并且在开发阶段可能会想要去执行它,此时不需要先退出vim,再在shell中执行,而是可以在Vim命令行中直接运行它:</p>
+<pre><code class="hljs shell"><span class="hljs-meta">#</span><span class="bash"> %在这里就表示当前正在开发的shell脚本</span>
+:!bash %</code></pre>
+
+<h3 id="Vim退出到后台"><a href="#Vim退出到后台" class="headerlink" title="Vim退出到后台"></a>Vim退出到后台</h3><p>在有些情况下,我们可能正在bash shell中运行Vim,然后需要一些shell命令,此时可以先按照Ctrl-z挂起Vim所属的进程,在需要的时候在通过fg命令唤起.另外可以使用jobs查看后台作业:</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/vim/">vim</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/vim/">vim</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/08/02/Rust%E4%B9%8B%E5%8C%85%E7%AE%A1%E7%90%86/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Rust之包管理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2019/02/09/%E6%B7%B1%E5%85%A5Flutter%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95_Platform%20Channel%E5%8E%9F%E7%90%86/">
+                        <span class="hidden-mobile">深入Flutter技术内幕:Platform Channel设计与实现(一)</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Vim高级使用技巧&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

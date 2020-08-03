@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Floating Cat</title>
+  
+  <subtitle>lionoggo.com</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://yoursite.com/"/>
+  <updated>2020-08-02T15:56:55.610Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name>lionoggo</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Rust之包管理</title>
+    <link href="http://yoursite.com/2020/08/02/Rust%E4%B9%8B%E5%8C%85%E7%AE%A1%E7%90%86/"/>
+    <id>http://yoursite.com/2020/08/02/Rust之包管理/</id>
+    <published>2020-08-02T15:29:04.783Z</published>
+    <updated>2020-08-02T15:56:55.610Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h1 id=&quot;Rust包管理&quot;&gt;&lt;a href=&quot;#Rust包管理&quot; class=&quot;headerlink&quot; title=&quot;Rust包管理&quot;&gt;&lt;/a&gt;Rust包管理&lt;/h1&gt;&lt;p&gt;title: Rust包管理&lt;br&gt;date: 2020-06-04
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Vim高级使用技巧</title>
+    <link href="http://yoursite.com/2020/05/04/Vim%E9%AB%98%E9%98%B6%E6%8A%80%E5%B7%A7/"/>
+    <id>http://yoursite.com/2020/05/04/Vim高阶技巧/</id>
+    <published>2020-05-04T13:47:57.000Z</published>
+    <updated>2020-08-02T15:04:40.769Z</updated>
+    
+    <summary type="html">
+    
+      Vim高级使用技巧
+    
+    </summary>
+    
+      <category term="vim" scheme="http://yoursite.com/categories/vim/"/>
+    
+    
+      <category term="vim" scheme="http://yoursite.com/tags/vim/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深入Flutter技术内幕:Platform Channel设计与实现(一)</title>
+    <link href="http://yoursite.com/2019/02/09/%E6%B7%B1%E5%85%A5Flutter%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95_Platform%20Channel%E5%8E%9F%E7%90%86/"/>
+    <id>http://yoursite.com/2019/02/09/深入Flutter技术内幕_Platform Channel原理/</id>
+    <published>2019-02-09T13:20:50.000Z</published>
+    <updated>2020-08-02T15:04:40.771Z</updated>
+    
+    <summary type="html">
+    
+      深入分析Flutter跨平台通信机制,掌握MethodChannel工作基本流程.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Android" scheme="http://yoursite.com/tags/Android/"/>
+    
+      <category term="Flutter" scheme="http://yoursite.com/tags/Flutter/"/>
+    
+      <category term="Platform Channel" scheme="http://yoursite.com/tags/Platform-Channel/"/>
+    
+      <category term="Dart" scheme="http://yoursite.com/tags/Dart/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>思考快与慢(一):高效开发之Intellij IDEA</title>
+    <link href="http://yoursite.com/2019/01/27/%E6%80%9D%E8%80%83%E5%BF%AB%E4%B8%8E%E6%85%A2(%E4%B8%80)_%E9%AB%98%E6%95%88%E5%BC%80%E5%8F%91%E4%B9%8BIntellij%20IDEA/"/>
+    <id>http://yoursite.com/2019/01/27/思考快与慢(一)_高效开发之Intellij IDEA/</id>
+    <published>2019-01-27T04:51:50.000Z</published>
+    <updated>2020-08-02T15:04:40.770Z</updated>
+    
+    <summary type="html">
+    
+      &lt;&lt;思考快与慢&gt;&gt;系列之高效的Intellij IDEA原生快捷.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="高效" scheme="http://yoursite.com/tags/%E9%AB%98%E6%95%88/"/>
+    
+      <category term="开发" scheme="http://yoursite.com/tags/%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="快与慢" scheme="http://yoursite.com/tags/%E5%BF%AB%E4%B8%8E%E6%85%A2/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>OpenJDK系列(四):从JVM谈C/C++编译流程</title>
+    <link href="http://yoursite.com/2018/09/25/OpenJDK%E7%B3%BB%E5%88%97(%E5%9B%9B)_%E4%BB%8EJVM%E8%B0%88C:C++%E7%BC%96%E8%AF%91%E6%B5%81%E7%A8%8B/"/>
+    <id>http://yoursite.com/2018/09/25/OpenJDK系列(四)_从JVM谈C:C++编译流程/</id>
+    <published>2018-09-25T14:26:50.000Z</published>
+    <updated>2020-08-02T15:04:40.768Z</updated>
+    
+    <summary type="html">
+    
+      了解JVM的过程就是对C/C++深入研究的过程,要想对OpenJDK有深入的研究一些基本功不可或缺.本文用来帮助你快速掌握有关C/C++编译的哪些事.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="gcc" scheme="http://yoursite.com/tags/gcc/"/>
+    
+      <category term="clang" scheme="http://yoursite.com/tags/clang/"/>
+    
+      <category term="llvm" scheme="http://yoursite.com/tags/llvm/"/>
+    
+      <category term="预处理" scheme="http://yoursite.com/tags/%E9%A2%84%E5%A4%84%E7%90%86/"/>
+    
+      <category term="编译" scheme="http://yoursite.com/tags/%E7%BC%96%E8%AF%91/"/>
+    
+      <category term="汇编" scheme="http://yoursite.com/tags/%E6%B1%87%E7%BC%96/"/>
+    
+      <category term="链接" scheme="http://yoursite.com/tags/%E9%93%BE%E6%8E%A5/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>OpenJDK系列(三):JVM对CAS的设计与实现</title>
+    <link href="http://yoursite.com/2018/06/27/OpenJDK%E7%B3%BB%E5%88%97(%E4%B8%89)_VM%E4%B8%ADCAS%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/"/>
+    <id>http://yoursite.com/2018/06/27/OpenJDK系列(三)_VM中CAS设计与实现/</id>
+    <published>2018-06-27T03:22:50.000Z</published>
+    <updated>2020-08-02T15:04:40.768Z</updated>
+    
+    <summary type="html">
+    
+      当且仅当V的值等于A时,CAS才会通过原子方式用新值B来更新V的值,否则不会执行任何操作.无论位置V的值是否等于A,最终都会返回V原有的值.换句话说:&quot;我认为V的值应该是A,如果是,那么就将V的值更新为B,否则不修改并告诉V的实际值是多少&quot;.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="OpenJDK" scheme="http://yoursite.com/tags/OpenJDK/"/>
+    
+      <category term="HotSpot" scheme="http://yoursite.com/tags/HotSpot/"/>
+    
+      <category term="CAS" scheme="http://yoursite.com/tags/CAS/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>OpenJDK系列(二):从ClassFileParser谈Endian</title>
+    <link href="http://yoursite.com/2018/06/22/OpenJDK%E7%B3%BB%E5%88%97(%E4%BA%8C)_%E4%BB%8EClassFileParser%E8%B0%88Endian/"/>
+    <id>http://yoursite.com/2018/06/22/OpenJDK系列(二)_从ClassFileParser谈Endian/</id>
+    <published>2018-06-22T07:20:50.000Z</published>
+    <updated>2020-08-02T15:04:40.768Z</updated>
+    
+    <summary type="html">
+    
+      当一个类需要被加载时,最终会交给classload.cpp的load_class(),接下来由ClassFileParser.cpp的parse_stream()负责解析.class文件对应ClassFileStream,在解析的过程中会根据平台的Endian来决定是否要进行转换.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="OpenJDK" scheme="http://yoursite.com/tags/OpenJDK/"/>
+    
+      <category term="HotSpot" scheme="http://yoursite.com/tags/HotSpot/"/>
+    
+      <category term="Endian" scheme="http://yoursite.com/tags/Endian/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>OpenJDK系列(一):编译/调试与项目结构</title>
+    <link href="http://yoursite.com/2018/06/20/OpenJDK%E7%B3%BB%E5%88%97(%E4%B8%80)_%E7%BC%96%E8%AF%91%E4%B8%8E%E8%B0%83%E8%AF%95/"/>
+    <id>http://yoursite.com/2018/06/20/OpenJDK系列(一)_编译与调试/</id>
+    <published>2018-06-20T05:20:50.000Z</published>
+    <updated>2020-08-02T15:04:40.768Z</updated>
+    
+    <summary type="html">
+    
+      正如每个Android工程师离不开AOSP项目一样,每个从事Java领域的工程师,最后都免不了去了解下OpenJDK.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="OpenJDK" scheme="http://yoursite.com/tags/OpenJDK/"/>
+    
+      <category term="HotSpot" scheme="http://yoursite.com/tags/HotSpot/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深入Android辅助服务架构与设计</title>
+    <link href="http://yoursite.com/2018/03/22/%E6%B7%B1%E5%85%A5Android%E8%BE%85%E5%8A%A9%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E4%B8%8E%E8%AE%BE%E8%AE%A1/"/>
+    <id>http://yoursite.com/2018/03/22/深入Android辅助服务架构与设计/</id>
+    <published>2018-03-22T11:30:19.000Z</published>
+    <updated>2020-08-02T15:04:40.771Z</updated>
+    
+    <summary type="html">
+    
+      在16年时,写过一篇关于AccessibilityService使用的文章在网上被多次提及,后续在工作中也多次涉及,在此前提下对AccessibilityService有了更深层次的理解,本文将从系统的角度分析服务服务架构.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="AccessibilityService" scheme="http://yoursite.com/tags/AccessibilityService/"/>
+    
+      <category term="ViewRootImpl" scheme="http://yoursite.com/tags/ViewRootImpl/"/>
+    
+      <category term="AccessibilityManagerService" scheme="http://yoursite.com/tags/AccessibilityManagerService/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android图形显示系统基本原理</title>
+    <link href="http://yoursite.com/2017/09/12/%E4%BB%8E%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E7%B3%BB%E7%BB%9F%E5%88%B0Android%E6%98%BE%E7%A4%BA%E7%B3%BB%E7%BB%9F/"/>
+    <id>http://yoursite.com/2017/09/12/从计算机图形系统到Android显示系统/</id>
+    <published>2017-09-12T08:01:50.000Z</published>
+    <updated>2020-08-02T15:04:40.769Z</updated>
+    
+    <summary type="html">
+    
+      Android图形显示系统和传统计算机图形显示系统并无本质区别.移动端作为前端的一个分支,其界面的流畅性事关重要,如何定义界面的流畅性以及如何开发出流畅的界面需要对计算机图形领域有所了解,将从基础开始,逐步深入到Android图形显示原理.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Android" scheme="http://yoursite.com/tags/Android/"/>
+    
+      <category term="inotify" scheme="http://yoursite.com/tags/inotify/"/>
+    
+      <category term="FileObserver" scheme="http://yoursite.com/tags/FileObserver/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>TensorFlow学习笔记(一)</title>
+    <link href="http://yoursite.com/2017/05/12/TensorFlow%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0(%E4%B8%80)/"/>
+    <id>http://yoursite.com/2017/05/12/TensorFlow学习笔记(一)/</id>
+    <published>2017-05-12T15:15:49.000Z</published>
+    <updated>2020-08-02T15:04:40.768Z</updated>
+    
+    <summary type="html">
+    
+      最近致力于深度学习,希望在移动领域能够找出更多的应用点.其中TensorFlow作为目前的一个热点值得我们重点关注.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Android" scheme="http://yoursite.com/tags/Android/"/>
+    
+      <category term="TensorFlow" scheme="http://yoursite.com/tags/TensorFlow/"/>
+    
+      <category term="AI" scheme="http://yoursite.com/tags/AI/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>AsyncTask设计与实现</title>
+    <link href="http://yoursite.com/2017/04/05/AsyncTask%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/"/>
+    <id>http://yoursite.com/2017/04/05/AsyncTask设计与实现/</id>
+    <published>2017-04-05T11:39:39.000Z</published>
+    <updated>2020-08-02T15:04:40.767Z</updated>
+    
+    <summary type="html">
+    
+      在从事开发的过程中,累积了很多方面的资料.之前在一次意外事故中丢失很多,现在一个不知名的网盘中找到了一些有关Android笔记,不知写于何时但还有点价值,现在重新整理下.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Android" scheme="http://yoursite.com/tags/Android/"/>
+    
+      <category term="AsyncTask" scheme="http://yoursite.com/tags/AsyncTask/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>从JVM内存模型到线程安全</title>
+    <link href="http://yoursite.com/2017/02/28/%E4%BB%8EJVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E8%B0%88%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/"/>
+    <id>http://yoursite.com/2017/02/28/从JVM内存模型谈线程安全/</id>
+    <published>2017-02-27T16:40:38.000Z</published>
+    <updated>2020-08-02T15:04:40.769Z</updated>
+    
+    <summary type="html">
+    
+      从存储器到JVM内存模型,从硬件结构到JVM实现,换种角度看线程安全.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="JVM" scheme="http://yoursite.com/tags/JVM/"/>
+    
+      <category term="JMM" scheme="http://yoursite.com/tags/JMM/"/>
+    
+      <category term="线程安全" scheme="http://yoursite.com/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>乱序执行与内存屏障</title>
+    <link href="http://yoursite.com/2017/02/22/%E4%B9%B1%E5%BA%8F%E6%89%A7%E8%A1%8C%E4%B8%8E%E6%8C%87%E4%BB%A4%E9%87%8D%E6%8E%92/"/>
+    <id>http://yoursite.com/2017/02/22/乱序执行与指令重排/</id>
+    <published>2017-02-22T11:21:15.000Z</published>
+    <updated>2020-08-02T15:04:40.769Z</updated>
+    
+    <summary type="html">
+    
+      10多年前的程序员对处理器乱序执行和内存屏障应该是很熟悉的,但随着计算机技术突飞猛进的发展,我们离底层原理越来越远,这并不是一件坏事,但在有些情况下了解一些底层原理有助于我们更好的工作,比如现代高级语言多提供了多线程并发技术,如果不深入下来,那么有些由多线程造成问题就很难排查和理解.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="as-if-serial" scheme="http://yoursite.com/tags/as-if-serial/"/>
+    
+      <category term="Java" scheme="http://yoursite.com/tags/Java/"/>
+    
+      <category term="CPU" scheme="http://yoursite.com/tags/CPU/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>一个程序员的日常书单(2018)</title>
+    <link href="http://yoursite.com/2017/02/11/%E6%97%A5%E5%B8%B8%E4%B9%A6%E5%8D%95/"/>
+    <id>http://yoursite.com/2017/02/11/日常书单/</id>
+    <published>2017-02-11T15:59:51.000Z</published>
+    <updated>2020-08-02T15:04:40.770Z</updated>
+    
+    <summary type="html">
+    
+      程序员平时都读什么书?
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="书单" scheme="http://yoursite.com/tags/%E4%B9%A6%E5%8D%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>来自Unix/Linux的编程启示录</title>
+    <link href="http://yoursite.com/2017/02/08/%E6%9D%A5%E8%87%AAUnix:Linux%E7%9A%84%E7%BC%96%E7%A8%8B%E5%90%AF%E7%A4%BA%E5%BD%95/"/>
+    <id>http://yoursite.com/2017/02/08/来自Unix:Linux的编程启示录/</id>
+    <published>2017-02-07T20:46:00.000Z</published>
+    <updated>2020-08-02T15:04:40.770Z</updated>
+    
+    <summary type="html">
+    
+      写本文的最初灵感源于16年11月份我将工作环境切换到Mac OS上,其中一些使用&quot;差异&quot;让我开始对Unix/Linux中设计产生了浓厚的兴趣.虽然从13年开始使用redhat,再到后来使用的ubuntu,但却从来关注过这些,特此记录.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Unix" scheme="http://yoursite.com/tags/Unix/"/>
+    
+      <category term="编程" scheme="http://yoursite.com/tags/%E7%BC%96%E7%A8%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>年轻人谈独处和自律</title>
+    <link href="http://yoursite.com/2017/01/05/%E5%B9%B4%E8%BD%BB%E4%BA%BA%E8%B0%88%E7%8B%AC%E5%A4%84%E5%92%8C%E8%87%AA%E5%BE%8B/"/>
+    <id>http://yoursite.com/2017/01/05/年轻人谈独处和自律/</id>
+    <published>2017-01-05T14:21:57.000Z</published>
+    <updated>2020-08-02T15:04:40.770Z</updated>
+    
+    <summary type="html">
+    
+      这个话题有点老套,甚至是无聊.在开始写之前,我问自己:你还这么年轻,有什么资格谈独处和自律?想想未成仙前也论道,也就有了这篇不成熟的文章,作为2016年的一个小结.
+    
+    </summary>
+    
+      <category term="life" scheme="http://yoursite.com/categories/life/"/>
+    
+    
+      <category term="自律" scheme="http://yoursite.com/tags/%E8%87%AA%E5%BE%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>玩转注解之进阶篇</title>
+    <link href="http://yoursite.com/2016/12/31/%E7%8E%A9%E8%BD%AC%E6%B3%A8%E8%A7%A3%E4%B9%8B%E8%BF%9B%E9%98%B6%E7%AF%87/"/>
+    <id>http://yoursite.com/2016/12/31/玩转注解之进阶篇/</id>
+    <published>2016-12-31T11:25:49.000Z</published>
+    <updated>2020-08-02T15:04:40.772Z</updated>
+    
+    <summary type="html">
+    
+      之前我们介绍了什么是注解以及如何开发注解处理器,今天就来说说在开发编译时注解处理器中的那些最佳实践.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Java" scheme="http://yoursite.com/tags/Java/"/>
+    
+      <category term="apt" scheme="http://yoursite.com/tags/apt/"/>
+    
+      <category term="annotationProcessor" scheme="http://yoursite.com/tags/annotationProcessor/"/>
+    
+      <category term="调试" scheme="http://yoursite.com/tags/%E8%B0%83%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>玩转注解之基础篇</title>
+    <link href="http://yoursite.com/2016/12/25/%E7%8E%A9%E8%BD%AC%E6%B3%A8%E8%A7%A3%E4%B9%8B%E5%9F%BA%E7%A1%80%E7%AF%87/"/>
+    <id>http://yoursite.com/2016/12/25/玩转注解之基础篇/</id>
+    <published>2016-12-25T14:39:49.000Z</published>
+    <updated>2020-08-02T15:04:40.771Z</updated>
+    
+    <summary type="html">
+    
+      今天我们就来细细评味Java中的Annotation,也就是我们常说的注解.本文按照以下顺序进行:元数据-&gt;元注解-&gt;运行时注解-&gt;编译时注解处理器.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="Java" scheme="http://yoursite.com/tags/Java/"/>
+    
+      <category term="注解" scheme="http://yoursite.com/tags/%E6%B3%A8%E8%A7%A3/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>JNI开发之RegisterNatives</title>
+    <link href="http://yoursite.com/2016/12/20/RegisterNatives%E4%BD%BF%E7%94%A8/"/>
+    <id>http://yoursite.com/2016/12/20/RegisterNatives使用/</id>
+    <published>2016-12-20T04:20:50.000Z</published>
+    <updated>2020-08-02T15:04:40.768Z</updated>
+    
+    <summary type="html">
+    
+      JNI中使用RegisterNatives实现Native方法动态绑定.
+    
+    </summary>
+    
+      <category term="technology" scheme="http://yoursite.com/categories/technology/"/>
+    
+    
+      <category term="JNI" scheme="http://yoursite.com/tags/JNI/"/>
+    
+  </entry>
+  
+</feed>

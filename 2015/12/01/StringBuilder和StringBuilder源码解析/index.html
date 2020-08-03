@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>StringBuilder &amp; StringBuffer设计与实现 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2015-12-01 11:29">
+                    2015年12月1日 上午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    1.6k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    19
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="AbstractStringBuilder"><a href="#AbstractStringBuilder" class="headerlink" title="AbstractStringBuilder"></a>AbstractStringBuilder</h1><p><code>StringBuilder</code>与<code>StringBuffer</code>是两个常用的操作字符串的类,两者最大的区别在于<code>StringBuilder</code>是线程不安全的，而<code>StringBuffer</code>是线程安全的,此外前者是JDK1.5加入的.后者在JDK1.0就有了.</p>
+<p>和String不同,StringBuilder和StringBuffer都是基于数组扩容来实现,其核心代码在其父类AbstractStringBuilder中.可以说StringBuilder和StringBuffer的实现原理是一样的,唯一的不同的是StringBuffer的大多数方法都是用synchronize修饰,即线程安全.直接看下其类图更明了些:</p>
+<p> <img src="https://i.imgur.com/5dT87rr.png" srcset="/img/loading.gif" alt="image-20181023093009963"></p>
+<p><code>AbstractStringBuilder</code>内部用一个<code>char[]</code>数组保存字符串，可以在构造的时候指定初始容量方法,其构造方法定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AbstractStringBuilder</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Appendable</span>, <span class="hljs-title">CharSequence</span> </span>&#123;
+    <span class="hljs-keyword">char</span>[] value;	<span class="hljs-comment">// 用于保存字符串</span>
+    <span class="hljs-keyword">int</span> count;
+    
+    AbstractStringBuilder() &#123;
+    &#125;
+
+	<span class="hljs-comment">// 在创建时可以为其指定初始化容量.</span>
+    AbstractStringBuilder(<span class="hljs-keyword">int</span> capacity) &#123;
+        value = <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[capacity];
+    &#125;
+    
+&#125;</code></pre>
+
+
+
+<h2 id="扩容算法"><a href="#扩容算法" class="headerlink" title="扩容算法"></a>扩容算法</h2><p>正如之前我们提到StringBuilder和StringBuffer最核心的地方是数据扩容,现在我们来看一下其数组扩容的原理.由于StringBuilder和StringBuffer都是AbstractStringBuilder的子类,其扩容原理一致,因此扩容算法在AbstrStringBuilder中实现.数组扩容算法主要由<code>ensureCapacityInternal()</code>来实现:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ensureCapacityInternal</span><span class="hljs-params">(<span class="hljs-keyword">int</span> minimumCapacity)</span> </span>&#123;
+      <span class="hljs-comment">//minimumCapcity为当前所需容量大小,value.length表示当前数组容量大小</span>
+      <span class="hljs-keyword">if</span> (minimumCapacity - value.length &gt; <span class="hljs-number">0</span>) &#123;
+          <span class="hljs-comment">//数组扩容,先计算扩容之后的容量,再将原数组内容拷贝</span>
+          value = Arrays.copyOf(value,
+                  newCapacity(minimumCapacity));
+      &#125;
+  &#125;</code></pre>
+
+<p><code>newCapacity()</code>用于计算扩容之后数组的大小:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">newCapacity</span><span class="hljs-params">(<span class="hljs-keyword">int</span> minCapacity)</span> </span>&#123;
+       <span class="hljs-comment">// overflow-conscious code</span>
+       <span class="hljs-keyword">int</span> newCapacity = (value.length &lt;&lt; <span class="hljs-number">1</span>) + <span class="hljs-number">2</span>;
+       <span class="hljs-keyword">if</span> (newCapacity - minCapacity &lt; <span class="hljs-number">0</span>) &#123;
+           newCapacity = minCapacity;
+       &#125;
+       <span class="hljs-keyword">return</span> (newCapacity &lt;= <span class="hljs-number">0</span> || MAX_ARRAY_SIZE - newCapacity &lt; <span class="hljs-number">0</span>)
+           ? hugeCapacity(minCapacity)
+           : newCapacity;
+   &#125;</code></pre>
+
+<p>不难看出扩容算法是首先把容量扩大为原来的两倍,然后加2.如果扩容之后容量仍小于指定容量,那么就把新的容量设置为指定容量minCapacity.接下来对新的容量进行判断,主要是对溢出情况的判断,因此可能会抛出OutMemoryError.</p>
+<h2 id="字符串追加"><a href="#字符串追加" class="headerlink" title="字符串追加"></a>字符串追加</h2><p>append()是我们最常用的方法,用于实现字符串追加.append()有很多的重载方法,用于实现不同类型的数据的追加.常见用于追加String类型的方法定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> AbstractStringBuilder <span class="hljs-title">append</span><span class="hljs-params">(String str)</span> </span>&#123;
+      <span class="hljs-keyword">if</span> (str == <span class="hljs-keyword">null</span>)
+          <span class="hljs-keyword">return</span> appendNull();
+      <span class="hljs-keyword">int</span> len = str.length();
+      <span class="hljs-comment">//1. 数组扩容</span>
+      ensureCapacityInternal(count + len);
+      <span class="hljs-comment">//2. 将str拷贝到value数组中</span>
+      str.getChars(<span class="hljs-number">0</span>, len, value, count);
+      <span class="hljs-comment">//3. 修改count</span>
+      count += len;
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+  &#125;</code></pre>
+
+<p>所有的追加操作实现比较类似,首先进行扩容操作,其次进行字符串的拷贝,最后进行字符数中字符个数的修改.需要注意如果<code>str</code>是<code>null</code>,则会调用<code>appendNull()</code>方法。这个方法其实是追加了<code>&#39;n&#39;</code>、<code>&#39;u&#39;</code>、<code>&#39;l&#39;</code>、<code>&#39;l&#39;</code>这几个字符。如果不是<code>null</code>,则首先进行扩容操作,然后调用<code>String</code>的<code>getChars()</code>方法将<code>str</code>追加到<code>value</code>末尾.最后返回对象本身，所以<code>append()</code>可以连续调用.</p>
+<h2 id="字符串截取"><a href="#字符串截取" class="headerlink" title="字符串截取"></a>字符串截取</h2><p>在AbstractStringBuilder中提供了<code>subString()</code>方法用于字符串的截取操作,其最终都通过以下方法实现:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">substring</span><span class="hljs-params">(<span class="hljs-keyword">int</span> start, <span class="hljs-keyword">int</span> end)</span> </span>&#123;
+    <span class="hljs-keyword">if</span> (start &lt; <span class="hljs-number">0</span>)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> StringIndexOutOfBoundsException(start);
+    <span class="hljs-keyword">if</span> (end &gt; count)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> StringIndexOutOfBoundsException(end);
+    <span class="hljs-keyword">if</span> (start &gt; end)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> StringIndexOutOfBoundsException(end - start);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> String(value, start, end - start);
+&#125;</code></pre>
+
+<p>不难发现截取操作返回的是一个新的String对象,在生成该String对象的时候内部需要进行数组拷贝操作,相对耗时,因此在操作”长”字符串时需要格外注意.</p>
+<h1 id="StringBuilder"><a href="#StringBuilder" class="headerlink" title="StringBuilder"></a>StringBuilder</h1><p>由于AbstractStringBuilder实现字符串操作和核心操作,因此StringBuilder只需要继承它,并调用父类的大部分操作即可.首先我们来看其构造函数:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">StringBuilder</span><span class="hljs-params">()</span> </span>&#123;
+    <span class="hljs-keyword">super</span>(<span class="hljs-number">16</span>);
+&#125;
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">StringBuilder</span><span class="hljs-params">(<span class="hljs-keyword">int</span> capacity)</span> </span>&#123;
+    <span class="hljs-keyword">super</span>(capacity);
+&#125;
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">StringBuilder</span><span class="hljs-params">(String str)</span> </span>&#123;
+    <span class="hljs-keyword">super</span>(str.length() + <span class="hljs-number">16</span>);
+    append(str);
+&#125;</code></pre>
+
+<p>可以看出StringBuilder的默认的容量大小为16,当然也允许我们指定初始化容量.在某些情况下我们可能直接用String类型初始化它,此时的初始化容量大小是:String类型的长度+16,比如初始化字符串是”Hello”,那么此时默认的容量大小为5+16.</p>
+<h2 id="字符串追加-1"><a href="#字符串追加-1" class="headerlink" title="字符串追加"></a>字符串追加</h2><p>StringBuilder的append()方法直接调用了父类AbstractStringBuilder中的方法,如<code>append(String str)</code></p>
+<pre><code class="hljs java"><span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> StringBuilder <span class="hljs-title">append</span><span class="hljs-params">(String str)</span> </span>&#123;
+        <span class="hljs-keyword">super</span>.append(str);
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+    &#125;</code></pre>
+
+<p>需要注意,对于StringBuilder而言,不要进行没必要的toString()方法调用,因为每次调用toString()时,都new了一个新的String对象.因此频繁调用会增加gc的工作量,影响性能.</p>
+<pre><code class="hljs java"><span class="hljs-meta">@Override</span>
+   <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">toString</span><span class="hljs-params">()</span> </span>&#123;
+       <span class="hljs-comment">// Create a copy, don't share the array</span>
+       <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> String(value, <span class="hljs-number">0</span>, count);
+   &#125;</code></pre>
+
+<h1 id="StringBuffer"><a href="#StringBuffer" class="headerlink" title="StringBuffer"></a>StringBuffer</h1><p>和StringBuilder实现类似,只不过考虑到线程同步的问题,在StringBuffer中很多方法使用synchronized修饰,以<code>append(String str)</code>为例:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> StringBuffer <span class="hljs-title">append</span><span class="hljs-params">(String str)</span> </span>&#123;
+      toStringCache = <span class="hljs-keyword">null</span>;
+      <span class="hljs-keyword">super</span>.append(str);
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+  &#125;</code></pre>
+
+<h2 id="字符串数组缓存"><a href="#字符串数组缓存" class="headerlink" title="字符串数组缓存"></a>字符串数组缓存</h2><p>和StringBuilder不同的是StringBuffer中多了toStingCache属性,其定义如下:</p>
+<pre><code class="hljs java"> <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">StringBuffer</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractStringBuilder</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">java</span>.<span class="hljs-title">io</span>.<span class="hljs-title">Serializable</span>, <span class="hljs-title">CharSequence</span> </span>&#123;
+	
+	<span class="hljs-keyword">private</span> <span class="hljs-keyword">transient</span> <span class="hljs-keyword">char</span>[] toStringCache;
+
+&#125;</code></pre>
+
+<p>toStringCache用于缓存最后一次调用toString时的字符数组.一旦StringBuffer发生修改时(比如append时),该字段会被重新置为null,其实现如下:</p>
+<pre><code class="hljs java"><span class="hljs-meta">@Override</span>
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> String <span class="hljs-title">toString</span><span class="hljs-params">()</span> </span>&#123;
+     <span class="hljs-keyword">if</span> (toStringCache == <span class="hljs-keyword">null</span>) &#123;
+         toStringCache = Arrays.copyOfRange(value, <span class="hljs-number">0</span>, count);
+     &#125;
+     <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> String(toStringCache, <span class="hljs-keyword">true</span>);
+ &#125;</code></pre>
+
+<p>在toString()中除了会初始化toStringCache对象,返回的String对象也和StringBuider的不一样:构造出来的String对象并没有实际复制字符串,只是把value指定了构造参数.这样可以节省复制元素的时间.</p>
+<pre><code class="hljs java">String(<span class="hljs-keyword">char</span>[] value, <span class="hljs-keyword">boolean</span> share) &#123;
+    <span class="hljs-comment">// assert share : "unshared not supported";</span>
+    <span class="hljs-keyword">this</span>.value = value;
+&#125;</code></pre>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
+<li><code>StringBuilder</code>和<code>StringBuffer</code>都是可变字符串，前者线程不安全，后者线程安全。</li>
+<li><code>StringBuilder</code>和<code>StringBuffer</code>的大部分方法均调用父类<code>AbstractStringBuilder</code>的实现。其扩容机制首先是把容量变为原来容量的2倍加2。最大容量是<code>Integer.MAX_VALUE</code>，也就是<code>0x7fffffff</code>。</li>
+<li><code>StringBuilder</code>和<code>StringBuffer</code>的默认容量都是16，事先预先估计好字符串的大小避免扩容带来的时间消耗。</li>
+</ul>
+<p>需要注意,在jdk 8之前,字符串常量被保存在PermGen中,而从jdk 1.8开始,JVM采用Metaspace来代替了PermGen,字符串常量也因此被转移到了堆区.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/String/">String</a>
+                    
+                      <a class="hover-with-bg" href="/tags/StringBuffer/">StringBuffer</a>
+                    
+                      <a class="hover-with-bg" href="/tags/StringBuilder/">StringBuilder</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2015/12/05/%E4%BB%8EVFS%E7%9C%8B%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">从VFS谈文件读写</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2015/11/13/%E6%B7%B1%E5%85%A5JVM%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/">
+                        <span class="hidden-mobile">谈JVM类加载机制</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "StringBuilder & StringBuffer设计与实现&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

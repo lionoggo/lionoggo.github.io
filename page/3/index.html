@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 100vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+          </div>
+
+          
+            <div class="scroll-down-bar">
+              <i class="iconfont icon-arrowdown"></i>
+            </div>
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-md">
+        <div class="py-5" id="board"
+          style=margin-top:0>
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/12/15/Android%E6%9D%82%E8%B0%88:%E4%BB%8E%E6%A8%A1%E5%9D%97%E5%8C%96%E5%88%B0%E7%BB%84%E4%BB%B6%E5%8C%96/">Android杂谈:从模块化到组件化</a>
+
+      <a href="/2016/12/15/Android%E6%9D%82%E8%B0%88:%E4%BB%8E%E6%A8%A1%E5%9D%97%E5%8C%96%E5%88%B0%E7%BB%84%E4%BB%B6%E5%8C%96/" class="index-excerpt">
+        
+        
+          
+        
+        <div>模块化和组件化以下高能,请做好心理准备,看不懂请发邮件来交流.本文不推荐新手阅读,如果你刚接触Android开发不久,请立刻放弃阅读本文
+模块化组件化不是个新概念,其在各行各业都一直备受重视.至于组件化什么时候在软件工程领域提出已经无从考究了,不过呢可以确认的是组件化最早应用于服务端开发,后来在该思想的指导下,前端开发和移动端开发也产生各自的开发方式.
+在了解组件化之前,先来回顾下模块化的定义
+
+</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-12-15
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%A8%A1%E5%9D%97%E5%8C%96/">模块化</a>
+            
+              <a href="/tags/%E7%BB%84%E4%BB%B6%E5%8C%96/">组件化</a>
+            
+              <a href="/tags/Android/">Android</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/12/10/%E8%B0%88Android%20SDK%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%BC%80%E5%8F%91(%E4%B8%80)/">Android SDK设计与开发(一)</a>
+
+      <a href="/2016/12/10/%E8%B0%88Android%20SDK%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%BC%80%E5%8F%91(%E4%B8%80)/" class="index-excerpt">
+        
+        
+          
+        
+        <div>概念简介什么是SDKSDK是Software Development Kit的缩写,译为”软件开发工具包”,通常是为辅助开发某类软件而编写的特定软件包,框架集合等,SDK一般包含相关文档,范例和工具.
+SDK可以分为系统SDK和应用SDK.所谓的系统SDK是为特定的软件包,软件框架,硬件平台,操作系统等简历应用时所使用的开发工具集合.而应用SDK则是基于系统SDK开发的独立于具体业务而具有特定功能</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-12-10
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Android/">Android</a>
+            
+              <a href="/tags/SDK/">SDK</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/10/01/%E8%B0%88Unix%20Domain%20Socket/">Unix Domain Socket</a>
+
+      <a href="/2016/10/01/%E8%B0%88Unix%20Domain%20Socket/" class="index-excerpt">
+        
+        
+          
+        
+        <div>Unix Domain Socket简介Unix Domain Socket是在网络Socket架构上发展而来用来实现同一台主机内进程通信的机制,简称UDS.和网络Socket相比,使用UDS传输数据不需要经过网络协议栈,不存在数据封包和拆包等过程,只涉及数据拷贝的过程.UDS使用系统文件地址来作为通信地址,无须像网络Socket那样必须指定可用的IP和端口号,使用更加简单高效.
+此外UDS支持S</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-10-01
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Unix/">Unix</a>
+            
+              <a href="/tags/Socket/">Socket</a>
+            
+              <a href="/tags/UDS/">UDS</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/09/21/JDK1.8%E4%B9%8BHashMap%E5%93%88%E5%B8%8C%E6%95%B0%E7%BB%84%E5%AE%B9%E9%87%8F%E7%AE%97%E6%B3%95/">HashMap之哈希数组容量计算</a>
+
+      <a href="/2016/09/21/JDK1.8%E4%B9%8BHashMap%E5%93%88%E5%B8%8C%E6%95%B0%E7%BB%84%E5%AE%B9%E9%87%8F%E7%AE%97%E6%B3%95/" class="index-excerpt">
+        
+        
+          
+        
+        <div>构造函数HashMap在初始化时允许我们指定负载因子和哈希数组初始化容量大小,以JDK 1.8为例,其最终调用构造方法如下:
+  public HashMap(int initialCapacity, float loadFactor) &#123;
+......
+      this.loadFactor = loadFactor;
+      this.threshold = tableSiz</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-09-21
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/HashMap/">HashMap</a>
+            
+              <a href="/tags/JDK-1-8/">JDK 1.8</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/09/20/Https%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84/">Https简易工作原理</a>
+
+      <a href="/2016/09/20/Https%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84/" class="index-excerpt">
+        
+        
+          
+        
+        <div>最近在看到这么一篇讲解Https原理的文章，语言精炼，通俗易懂，特地将其翻译下，原文在此how does https work
+加密算法简介正文开始之前，我先来解释简单的解释下对称加密和非对称加密.
+
+对称加密采用对称密码编码技术，也就是编码和解码采用相同描述字符，即加密和解密使用相同的密钥，实现这种加密技术的算法称对称加密算法。对称加密使用简单，密钥较短，加密和解密过程较快，耗时短，常见的对称加</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-09-20
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Https/">Https</a>
+            
+              <a href="/tags/%E5%8A%A0%E5%AF%86/">加密</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/07/21/%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90AIL%E8%AF%AD%E8%A8%80%E5%8F%8Ainit.rc%E6%96%87%E4%BB%B6/">深入分析AIL语言及init.rc</a>
+
+      <a href="/2016/07/21/%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90AIL%E8%AF%AD%E8%A8%80%E5%8F%8Ainit.rc%E6%96%87%E4%BB%B6/" class="index-excerpt">
+        
+        
+          
+        
+        <div>AIL语法AIL语言非常简单,主要包括两部分:结构语法及注释语法.下面我们就这两点进行说明
+结构语法AIL语言包含主要包含五种结构语法:
+
+Actions
+Services
+Options
+Commands
+Imports
+
+需要注意,AIL采用是面向行的代码风格,即用换行符作为一条语句的分隔符,也就是在init.rc中以一条语句通常占据一行.如果一行写不下,可以在行尾添加反斜杠来链接到下一行,换</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-07-21
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Android/">Android</a>
+            
+              <a href="/tags/AIL/">AIL</a>
+            
+              <a href="/tags/init-rc/">init.rc</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/07/14/%E4%BB%8Einotify%E5%88%B0FileObserver/">从inotify机制到FileObserver原理</a>
+
+      <a href="/2016/07/14/%E4%BB%8Einotify%E5%88%B0FileObserver/" class="index-excerpt">
+        
+        
+          
+        
+        <div>inotify简介那还有其他的方式么?熟悉linux的童鞋应该记得从linux kernel 2.6.13开始引入inotify机制,用于通知用户相关文件变化情况:任何一个文件发生某种变化,都会产生一个相应的文件事件.
+我们不仅好奇,文件的哪些事件能够被监控,也就是说inotify支持监控文件的哪些变化呢?继续往下看.
+可监控事件类型目前inotify能够监控的以下文件变化事件:
+
+
+
+事件类型
+</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-07-14
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Android/">Android</a>
+            
+              <a href="/tags/inotify/">inotify</a>
+            
+              <a href="/tags/FileObserver/">FileObserver</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/06/11/%E7%A9%BA%E6%9D%AF%E5%BF%83%E6%80%81/">空杯心态,一个程序员的自我修炼</a>
+
+      <a href="/2016/06/11/%E7%A9%BA%E6%9D%AF%E5%BF%83%E6%80%81/" class="index-excerpt">
+        
+        
+          
+        
+        <div>禅师与我梦回远古,我是一个佛学造诣很深的人,听说某个寺庙有位德高望重的老禅师,便去拜访.老禅师的徒弟接待我时,我心想:我是佛学造诣很深的人,这老禅师算是老几,有我厉害,有我懂得多么?后来,老禅师十分恭敬的接待了我并为我沏茶.可在倒水时,明明杯子里的水已经满了,但老禅师还是在不停的倒,我心有疑惑,便笑问道:”大师,杯中水已满,为什么还不停下来?”.禅师说:”是啊,既然已经满了,干嘛还要倒呢?”
+是啊</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-06-11
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/life/">life</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/life/">life</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/03/14/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E7%9A%84%E6%80%9D%E8%80%83/">关于时间的思考</a>
+
+      <a href="/2016/03/14/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E7%9A%84%E6%80%9D%E8%80%83/" class="index-excerpt">
+        
+        
+          
+        
+        <div>你的时间值多少钱?用金钱量化的时间,这是我第一次这么做.虽然打小老师就说”时间就是金钱”,可我真没有计算过.如果说时间的价值是一秒钟一块钱,一天共有86400秒.这意味这你每分钟都在花出3600块钱.那我每秒又能够赚多少钱呢,算了算,大概是0.00634195元吧.这数字的比值是相当恐怖的,在这之前,我从未想过.
+关于模式将具体事物抽象是为了寻求共同的模式,而将抽象事物再转为具体的事物才能更好的理</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-03-14
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/life/">life</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%80%9D%E7%BB%B4/">思维</a>
+            
+              <a href="/tags/%E6%97%B6%E9%97%B4/">时间</a>
+            
+              <a href="/tags/%E5%B7%B4%E6%99%AE%E6%B4%9B%E5%A4%AB/">巴普洛夫</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/01/01/%E7%AE%80%E6%9E%90Base64%E5%8E%9F%E7%90%86/">简析Base64原理</a>
+
+      <a href="/2016/01/01/%E7%AE%80%E6%9E%90Base64%E5%8E%9F%E7%90%86/" class="index-excerpt">
+        
+        
+          
+        
+        <div>Base64起源在网络传输中,有些方式并不支持所有的字节,比如早起邮件系统支持传输可见字符,而对于ASCII中的控制字符就无法传输.在比如在传图图片时,由于图片对应的二进制流中的字节有些事不可见字符,因此也就无法进行传输,那怎么在不修改传输协议的前提下,来支持所有的字节传输呢,换言之就是讲不可见字符表示为可见字符?
+而Base64就是该问题的一种解决方案,它是一种基于64个可见字符来表示二进制数据</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-01-01
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Base64/">Base64</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+
+
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <a class="extend prev" rel="prev" href="/page/2/"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/"><i class="iconfont icon-arrowright"></i></a>
+    </span>
+  </nav>
+  
+  <script>
+    for (ele of document.getElementById("pagination").getElementsByTagName("a")) {
+      ele.href += '#board';
+    }
+  </script>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "it's better to burn out than to fade away&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

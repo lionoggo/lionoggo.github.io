@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>OpenJDK系列(三):JVM对CAS的设计与实现 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2018-06-27 11:22">
+                    2018年6月27日 上午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2.4k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    32
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="CAS简介"><a href="#CAS简介" class="headerlink" title="CAS简介"></a>CAS简介</h1><p>CAS即Compare-and-Swap的缩写,即比较并交换,它是一种实现乐观锁的技术.在CAS中包含三个操作数:</p>
+<ul>
+<li>V: 需要读写的内存位置,从java角度你可以把它当成一个变量</li>
+<li>A: 预期值,也就是要进行比较的值</li>
+<li>B: 拟写入的新值</li>
+</ul>
+<p>当且仅当V的值等于A时,CAS才会通过<strong>原子</strong>方式用新值B来更新V的值,否则不会执行任何操作.无论位置V的值是否等于A,最终都会返回V原有的值.换句话说:”我认为V的值应该是A,如果是,那么就将V的值更新为B,否则不修改并告诉V的实际值是多少”.</p>
+<p>当多个线程使用CAS同时更新同一个变量时,只有其中一个线程能够成功更新变量的值,其他线程都将失败.和锁机制不同,失败的线程并不会被挂起,而是告知用户当前失败的情况,并由用户决定是否要再次尝试或者执行其他操作,其典型的流程如下:</p>
+<p><img src="https://i.imgur.com/P4iFBcL.png" srcset="/img/loading.gif" alt="image-20180910121551030"></p>
+<h2 id="传统锁实现CAS语义"><a href="#传统锁实现CAS语义" class="headerlink" title="传统锁实现CAS语义"></a>传统锁实现CAS语义</h2><p>在明白CAS的语义后,我们用传统的锁机制来实现该语义.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleCAS</span> </span>&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> value;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getValue</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">return</span> value;
+    &#125;
+
+    <span class="hljs-comment">// 比较并交换语义,最终都返回原有值</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">int</span> <span class="hljs-title">compareAndSwap</span><span class="hljs-params">(<span class="hljs-keyword">int</span> exectedValue, <span class="hljs-keyword">int</span> newValue)</span> </span>&#123;
+        <span class="hljs-keyword">int</span> oldValue = value;
+        <span class="hljs-keyword">if</span> (oldValue == exectedValue) &#123;
+            value = newValue;
+        &#125;
+        <span class="hljs-keyword">return</span> value;
+    &#125;
+
+    <span class="hljs-comment">// 比较并设置语义,返回成功与否    </span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">compareAndSet</span><span class="hljs-params">(<span class="hljs-keyword">int</span> exectedValue, <span class="hljs-keyword">int</span> newValue)</span> </span>&#123;
+        <span class="hljs-keyword">return</span> exectedValue == compareAndSwap(exectedValue, newValue);
+    &#125;
+&#125;</code></pre>
+
+<p>在上述代码中,<code>compareAndSwap()</code>用于实现”比较并交换”的语义,在此之上我们还实现了”比较并设置”的语义.</p>
+<h2 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h2><p>CAS典型使用模式是:首先从V中读取值A,并根据A计算出新值B,然后再通过CAS以原子方式将V中的值变成B(如果在此期间没有任何线程将V的值修改为其他值).我们借助刚才的SimpleCAS实现一个计数器,借此来说明其使用场景:</p>
+<pre><code class="hljs java"><span class="hljs-comment">// 线程安全的计数器</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SafeCounter</span> </span>&#123;
+    <span class="hljs-keyword">private</span> SimpleCAS cas;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SafeCounter</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">this</span>.cas = <span class="hljs-keyword">new</span> SimpleCAS();
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getValue</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">return</span> cas.getValue();
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">increment</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">int</span> value;
+        <span class="hljs-keyword">int</span> newValue;
+        <span class="hljs-keyword">do</span> &#123;
+            <span class="hljs-comment">// 读取旧值A</span>
+            value = cas.getValue();
+            <span class="hljs-comment">// 根据A计算新值B</span>
+            newValue = value + <span class="hljs-number">1</span>;
+        &#125; <span class="hljs-keyword">while</span> (!cas.compareAndSet(value, newValue));<span class="hljs-comment">// 使用CAS来设置新值B</span>
+        <span class="hljs-keyword">return</span> newValue;
+    &#125;
+&#125;</code></pre>
+
+<p>SafeCounter不会阻塞,如果其他线程同时更新计数器,那么会执行多次重试操作直至成功.到现在有关CAS的语义和使用已经说完,下面我们要说的是CAS在JAVA中的应用以及JVM中如何实现CAS.</p>
+<h1 id="CAS实现"><a href="#CAS实现" class="headerlink" title="CAS实现"></a>CAS实现</h1><p>通过传统的锁实现的CAS语义并非JVM真正对CAS的实现,这点需要记住.JVM中能够实现CAS本质是现代CPU已经支持Compare-and-Swap指令.从Java 5.0开始,JVM中直接调用了相关指令.</p>
+<h2 id="JVM对CAS的支持"><a href="#JVM对CAS的支持" class="headerlink" title="JVM对CAS的支持"></a>JVM对CAS的支持</h2><p>有关原子性变量的操作被统一定义在atomic.hpp,并以模板方法提供,其路径为:</p>
+<p><code>/OpenJDK10/hotspot/src/share/vm/runtime/atomic.hpp</code></p>
+<pre><code class="hljs c++"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T, <span class="hljs-keyword">typename</span> D, <span class="hljs-keyword">typename</span> U&gt;
+<span class="hljs-function"><span class="hljs-keyword">inline</span> D <span class="hljs-title">Atomic::cmpxchg</span><span class="hljs-params">(T exchange_value,</span></span>
+<span class="hljs-function"><span class="hljs-params">                         D <span class="hljs-keyword">volatile</span>* dest,</span></span>
+<span class="hljs-function"><span class="hljs-params">                         U compare_value,</span></span>
+<span class="hljs-function"><span class="hljs-params">                         cmpxchg_memory_order order)</span> </span>&#123;
+  <span class="hljs-keyword">return</span> CmpxchgImpl&lt;T, D, U&gt;()(exchange_value, dest, compare_value, order);
+&#125;
+
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Atomic</span>:</span>:CmpxchgImpl&lt;
+  T, T, T,
+  <span class="hljs-keyword">typename</span> EnableIf&lt;IsIntegral&lt;T&gt;::value || IsRegisteredEnum&lt;T&gt;::value&gt;::type&gt;
+  VALUE_OBJ_CLASS_SPEC
+&#123;
+  <span class="hljs-function">T <span class="hljs-title">operator</span><span class="hljs-params">()</span><span class="hljs-params">(T exchange_value, T <span class="hljs-keyword">volatile</span>* dest, T compare_value,</span></span>
+<span class="hljs-function"><span class="hljs-params">               cmpxchg_memory_order order)</span> <span class="hljs-keyword">const</span> </span>&#123;
+    <span class="hljs-comment">// Forward to the platform handler for the size of T.</span>
+    <span class="hljs-keyword">return</span> PlatformCmpxchg&lt;<span class="hljs-keyword">sizeof</span>(T)&gt;()(exchange_value,
+                                        dest,
+                                        compare_value,
+                                        order);
+  &#125;
+&#125;;</code></pre>
+
+<p>不同的平台PlatformCmpxchg实现不同,比如在mac平台上,其实现在</p>
+<p><code>/OpenJDK10/hotspot/src/os_cpu/bsd_x86/vm/atomic_bsd_x86.hpp</code></p>
+<pre><code class="hljs c++"><span class="hljs-comment">// 1字节长度</span>
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-keyword">inline</span> T Atomic::PlatformCmpxchg&lt;<span class="hljs-number">1</span>&gt;::<span class="hljs-keyword">operator</span>()(T exchange_value,
+                                                T <span class="hljs-keyword">volatile</span>* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order <span class="hljs-comment">/* order */</span>) <span class="hljs-keyword">const</span> &#123;
+  STATIC_ASSERT(<span class="hljs-number">1</span> == <span class="hljs-keyword">sizeof</span>(T));
+  <span class="hljs-comment">// 内嵌汇编代码,最终调用cmpxchgb指令实现"比较并交换"  </span>
+  <span class="hljs-function">__asm__ <span class="hljs-title">volatile</span> <span class="hljs-params">(  <span class="hljs-string">"lock cmpxchgb %1,(%3)"</span></span></span>
+<span class="hljs-function"><span class="hljs-params">                    : <span class="hljs-string">"=a"</span> (exchange_value)</span></span>
+<span class="hljs-function"><span class="hljs-params">                    : <span class="hljs-string">"q"</span> (exchange_value), <span class="hljs-string">"a"</span> (compare_value), <span class="hljs-string">"r"</span> (dest)</span></span>
+<span class="hljs-function"><span class="hljs-params">                    : <span class="hljs-string">"cc"</span>, <span class="hljs-string">"memory"</span>)</span></span>;
+  <span class="hljs-keyword">return</span> exchange_value;
+&#125;
+<span class="hljs-comment">// 4字节长度</span>
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-keyword">inline</span> T Atomic::PlatformCmpxchg&lt;<span class="hljs-number">4</span>&gt;::<span class="hljs-keyword">operator</span>()(T exchange_value,
+                                                T <span class="hljs-keyword">volatile</span>* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order <span class="hljs-comment">/* order */</span>) <span class="hljs-keyword">const</span> &#123;
+  STATIC_ASSERT(<span class="hljs-number">4</span> == <span class="hljs-keyword">sizeof</span>(T));
+  <span class="hljs-function">__asm__ <span class="hljs-title">volatile</span> <span class="hljs-params">(  <span class="hljs-string">"lock cmpxchgl %1,(%3)"</span></span></span>
+<span class="hljs-function"><span class="hljs-params">                    : <span class="hljs-string">"=a"</span> (exchange_value)</span></span>
+<span class="hljs-function"><span class="hljs-params">                    : <span class="hljs-string">"r"</span> (exchange_value), <span class="hljs-string">"a"</span> (compare_value), <span class="hljs-string">"r"</span> (dest)</span></span>
+<span class="hljs-function"><span class="hljs-params">                    : <span class="hljs-string">"cc"</span>, <span class="hljs-string">"memory"</span>)</span></span>;
+  <span class="hljs-keyword">return</span> exchange_value;
+&#125;
+<span class="hljs-comment">// 8字节长度</span>
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-keyword">inline</span> T Atomic::PlatformCmpxchg&lt;<span class="hljs-number">8</span>&gt;::<span class="hljs-keyword">operator</span>()(T exchange_value,
+                                                T <span class="hljs-keyword">volatile</span>* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order <span class="hljs-comment">/* order */</span>) <span class="hljs-keyword">const</span> &#123;
+  STATIC_ASSERT(<span class="hljs-number">8</span> == <span class="hljs-keyword">sizeof</span>(T));
+  __asm__ __volatile__ (  <span class="hljs-string">"lock cmpxchgq %1,(%3)"</span>
+                        : <span class="hljs-string">"=a"</span> (exchange_value)
+                        : <span class="hljs-string">"r"</span> (exchange_value), <span class="hljs-string">"a"</span> (compare_value), <span class="hljs-string">"r"</span> (dest)
+                        : <span class="hljs-string">"cc"</span>, <span class="hljs-string">"memory"</span>);
+  <span class="hljs-keyword">return</span> exchange_value;
+&#125;</code></pre>
+
+<p>在window_x86平台中,其实现在<code>/OpenJDK10/hotspot/src/os_cpu/windows_x86/vm/atomic_windows_x86.hpp</code></p>
+<pre><code class="hljs c++"><span class="hljs-keyword">template</span>&lt;&gt;
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-keyword">inline</span> T Atomic::PlatformCmpxchg&lt;<span class="hljs-number">1</span>&gt;::<span class="hljs-keyword">operator</span>()(T exchange_value,
+                                                T <span class="hljs-keyword">volatile</span>* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) <span class="hljs-keyword">const</span> &#123;
+  STATIC_ASSERT(<span class="hljs-number">1</span> == <span class="hljs-keyword">sizeof</span>(T));
+  <span class="hljs-comment">// alternative for InterlockedCompareExchange</span>
+  <span class="hljs-comment">// 内嵌汇编代码,最终调用cmpxchg指令实现"比较并交换"   </span>
+  __asm &#123;
+    mov edx, dest
+    mov cl, exchange_value
+    mov al, compare_value
+    lock cmpxchg <span class="hljs-keyword">byte</span> ptr [edx], cl
+  &#125;
+&#125;
+
+<span class="hljs-keyword">template</span>&lt;&gt;
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-keyword">inline</span> T Atomic::PlatformCmpxchg&lt;<span class="hljs-number">4</span>&gt;::<span class="hljs-keyword">operator</span>()(T exchange_value,
+                                                T <span class="hljs-keyword">volatile</span>* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) <span class="hljs-keyword">const</span> &#123;
+  STATIC_ASSERT(<span class="hljs-number">4</span> == <span class="hljs-keyword">sizeof</span>(T));
+  <span class="hljs-comment">// alternative for InterlockedCompareExchange</span>
+  __asm &#123;
+    mov edx, dest
+    mov ecx, exchange_value
+    mov eax, compare_value
+    lock cmpxchg dword ptr [edx], ecx
+  &#125;
+&#125;
+
+<span class="hljs-keyword">template</span>&lt;&gt;
+<span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;
+<span class="hljs-keyword">inline</span> T Atomic::PlatformCmpxchg&lt;<span class="hljs-number">8</span>&gt;::<span class="hljs-keyword">operator</span>()(T exchange_value,
+                                                T <span class="hljs-keyword">volatile</span>* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) <span class="hljs-keyword">const</span> &#123;
+  STATIC_ASSERT(<span class="hljs-number">8</span> == <span class="hljs-keyword">sizeof</span>(T));
+  jint ex_lo  = (jint)exchange_value;
+  jint ex_hi  = *( ((jint*)&amp;exchange_value) + <span class="hljs-number">1</span> );
+  jint cmp_lo = (jint)compare_value;
+  jint cmp_hi = *( ((jint*)&amp;compare_value) + <span class="hljs-number">1</span> );
+   <span class="hljs-comment">// 内嵌汇编代码,最终调用cmpxchg8b指令实现"比较并交换"8字节   </span>
+  __asm &#123;
+    push ebx
+    push edi
+    mov eax, cmp_lo
+    mov edx, cmp_hi
+    mov edi, dest
+    mov ebx, ex_lo
+    mov ecx, ex_hi
+    lock cmpxchg8b qword ptr [edi]
+    pop edi
+    pop ebx
+  &#125;
+&#125;</code></pre>
+
+<p>不难发现,最终都是通过内嵌汇编代码的形式来实现对于CPU指令cmpxchg的调用,关于该指令后续单独进行说明.到目前为止,对于JVM中的CAS操作已经了解的差不多了,但在Java层又是如何使用的呢?在开始了解Java层之前,我们先来看JVM是如何向Java层暴露这些操作的.</p>
+<p>Java层无法直接调用CPU指令,必须借助JNI,这里对CAS的调用在Java层就体现在sun.misc.Unsafe类上,UnSafe类中定义了很多Native方法:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Unsafe</span> </span>&#123;
+
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">native</span> <span class="hljs-keyword">void</span> <span class="hljs-title">registerNatives</span><span class="hljs-params">()</span></span>;
+    <span class="hljs-keyword">static</span> &#123;
+        registerNatives();
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">Unsafe</span><span class="hljs-params">()</span> </span>&#123;&#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Unsafe theUnsafe = <span class="hljs-keyword">new</span> Unsafe();
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">native</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">compareAndSetObject</span><span class="hljs-params">(Object o, <span class="hljs-keyword">long</span> offset,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                                    Object expected,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                                    Object x)</span></span>;
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">native</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">compareAndSetInt</span><span class="hljs-params">(Object o, <span class="hljs-keyword">long</span> offset,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                                 <span class="hljs-keyword">int</span> expected,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                                 <span class="hljs-keyword">int</span> x)</span></span>;
+    .......
+&#125;</code></pre>
+
+<p>其对应的C++实现类是:</p>
+<p><code>/OpenJDK10/hotspot/src/share/vm/prims/unsafe.cpp</code>,这里的compareAndSetInt()其实就对应于unsafe.cpp中的Unsafe_CompareAndSetInt():</p>
+<pre><code class="hljs c++">UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) &#123;
+  oop p = JNIHandles::resolve(obj);
+  jint* addr = (jint *)index_oop_from_field_offset_long(p, offset);
+  <span class="hljs-comment">// 调用Atomic.cpp中的cmpxchg()</span>
+  <span class="hljs-keyword">return</span> (jint)(Atomic::cmpxchg(x, addr, e)) == e;
+&#125; UNSAFE_END</code></pre>
+
+<p>总结一下,sun.misc.Unsafe中Native方法的调用,最终都会通过JNI调用到unsafe.cpp中,而unsafe.cpp中的实现本质都是调用CPU的cmpxchg指令.关于cmpxchg指令将在后续单独说明.</p>
+<p>到现在为止,JVM如何实现CAS以及如何向Java层暴露CAS操作这两个流程已经比较明了了,接下来还是要回归到Java层,来明白Java层中对CAS的支持.</p>
+<h2 id="Java层对CAS的支持"><a href="#Java层对CAS的支持" class="headerlink" title="Java层对CAS的支持"></a>Java层对CAS的支持</h2><p>在Java层面,原子变量类(java.util.concurrent.atomic中的AtomicXXX)在底层充分使用了来此JVM对CAS的支持,来实现高效的原子操作,此外,java.util.concurrent中的大多数类在实现时也是借助了这些原子变量类.以AtomicInteger为例,来了解下Atomic如何使用CAS.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AtomicInteger</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Number</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">java</span>.<span class="hljs-title">io</span>.<span class="hljs-title">Serializable</span> </span>&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = <span class="hljs-number">6214790243416807050L</span>;
+    <span class="hljs-comment">// Unsafe类型的成员变量U</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final long VALUE = U.objectFieldOffset(AtomicInteger.class, "value");
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-keyword">int</span> value;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">AtomicInteger</span><span class="hljs-params">(<span class="hljs-keyword">int</span> initialValue)</span> </span>&#123;
+        value = initialValue;
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">AtomicInteger</span><span class="hljs-params">()</span> </span>&#123;
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> <span class="hljs-title">get</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">return</span> value;
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">compareAndSet</span><span class="hljs-params">(<span class="hljs-keyword">int</span> expectedValue, <span class="hljs-keyword">int</span> newValue)</span> </span>&#123;
+        <span class="hljs-keyword">return</span> U.compareAndSetInt(<span class="hljs-keyword">this</span>, VALUE, expectedValue, newValue);
+    &#125;
+    
+    ......
+&#125;</code></pre>
+
+<p>通过上述代码不难看出,AtomicInteger本质就是CAS在Java层的应用.在明白CAS原理后,对AtomicInteger并不会感到难以理解.可以说正是有了CPU对Compare-and-Swap的支持,才使得Java在并发上有了突飞猛进的提升.另外在不支持Compare-and-Swap的平台上,JVM将使用自旋锁来代替.</p>
+<h1 id="CAS缺陷"><a href="#CAS缺陷" class="headerlink" title="CAS缺陷"></a>CAS缺陷</h1><p>ABA问题是CAS中是一种常见的问题:在于并发环境下,当第一个线程执行CAS(V,A,B)操作,在已经获取到当前变量V，但还没将其修改为新值B前，其他线程在其期间连续修改了两次变量V的值，使得该值又恢复为旧值.在这种情况下,我们无法判断这个变量是否已被修改过.其流程如下:</p>
+<p><img src="https://i.imgur.com/GyRDyLY.png" srcset="/img/loading.gif" alt="image-20180910153730654"></p>
+<p>在大多数情况下,ABA问题并不会影响最终的计算结果,但如果需要避免ABA问题该怎么办呢?从上述流程看出导致ABA的问题个根源是在时间线推进过程中没有为每次修改记录版本号导致.解决该问题只需要在每次修改时记录下其当前时间戳作为版本号就可以避免.在Java中,AtomicStampedReference原子类实现原理就是如此:设置值时要求对象值以及时间戳都必须满足期望值才能写入成功.(可以理解为git中的commit-id,先将A修改为B,再修改成A,最终内容虽然没变,但通过版本commit-id,我们仍然可以知道中间发生了变化)</p>
+<p>除了ABA问题外,如果自旋CAS长时间失败会给CPU带来很大的开销,在并发激烈的时候该问题尤其明显.另外,CAS使用场景比较单一,只能用于保证一个共享变量的原子操作.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/OpenJDK/">OpenJDK</a>
+                    
+                      <a class="hover-with-bg" href="/tags/HotSpot/">HotSpot</a>
+                    
+                      <a class="hover-with-bg" href="/tags/CAS/">CAS</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/09/25/OpenJDK%E7%B3%BB%E5%88%97(%E5%9B%9B)_%E4%BB%8EJVM%E8%B0%88C:C++%E7%BC%96%E8%AF%91%E6%B5%81%E7%A8%8B/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OpenJDK系列(四):从JVM谈C/C++编译流程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2018/06/22/OpenJDK%E7%B3%BB%E5%88%97(%E4%BA%8C)_%E4%BB%8EClassFileParser%E8%B0%88Endian/">
+                        <span class="hidden-mobile">OpenJDK系列(二):从ClassFileParser谈Endian</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "OpenJDK系列(三):JVM对CAS的设计与实现&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

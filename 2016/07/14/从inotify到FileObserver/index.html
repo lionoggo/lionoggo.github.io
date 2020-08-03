@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>从inotify机制到FileObserver原理 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2016-07-14 03:01">
+                    2016年7月14日 凌晨
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2.8k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    34
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="inotify简介"><a href="#inotify简介" class="headerlink" title="inotify简介"></a>inotify简介</h1><p>那还有其他的方式么?熟悉linux的童鞋应该记得从linux kernel 2.6.13开始引入inotify机制,用于通知用户相关文件变化情况:任何一个文件发生某种变化,都会产生一个相应的文件事件.</p>
+<p>我们不仅好奇,文件的哪些事件能够被监控,也就是说inotify支持监控文件的哪些变化呢?继续往下看.</p>
+<h2 id="可监控事件类型"><a href="#可监控事件类型" class="headerlink" title="可监控事件类型"></a>可监控事件类型</h2><p>目前inotify能够监控的以下文件变化事件:</p>
+<table>
+<thead>
+<tr>
+<th>事件类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IN_ACCESS</td>
+<td>文件被访问</td>
+</tr>
+<tr>
+<td>IN_MODIFY</td>
+<td>文件被修改</td>
+</tr>
+<tr>
+<td>IN_ATTRIB</td>
+<td>文件属性被修改</td>
+</tr>
+<tr>
+<td>IN_CLOSE_WRITE</td>
+<td>可写文件被关闭</td>
+</tr>
+<tr>
+<td>IN_CLOSE_NOWRITE</td>
+<td>不可写文件被关闭</td>
+</tr>
+<tr>
+<td>IN_CLOSE</td>
+<td>文件被关闭,也就以上两者的集合</td>
+</tr>
+<tr>
+<td>IN_OPEN</td>
+<td>文件被打开</td>
+</tr>
+<tr>
+<td>IN_MOVED_FROM</td>
+<td>文件被移来</td>
+</tr>
+<tr>
+<td>IN_MOVED_TO</td>
+<td>文件被移走</td>
+</tr>
+<tr>
+<td>IN_MOVE</td>
+<td>文件被移动,也就是以上两者的集合</td>
+</tr>
+<tr>
+<td>IN_CREATE</td>
+<td>文件被创建</td>
+</tr>
+<tr>
+<td>IN_DELETE</td>
+<td>文件被删除</td>
+</tr>
+<tr>
+<td>IN_DELETE_SELF</td>
+<td>自删除,也就是一个可执行文件在执行时尝试删除自己</td>
+</tr>
+<tr>
+<td>IN_MOVE_SELF</td>
+<td>自移动,也就是一个可执行文件在执行时尝试移动自己</td>
+</tr>
+<tr>
+<td>IN_UNMOUNT</td>
+<td>宿主文件系统被卸载</td>
+</tr>
+</tbody></table>
+<h2 id="API说明"><a href="#API说明" class="headerlink" title="API说明"></a>API说明</h2><p>不难发现,inotify对文件监控的支持是非常全面的,足以满足我们绝大部门的需求.接下来,我们对innotify的api做个简单的说明:<br>|方法|说明|<br>|—-|—|<br>|inotify_init|用于创建一个inotify实例,返回一个指向该实例的的文件描述符|<br>|inotify_add_watch|添加对文件或者目录的监控,可以指定需要监控那些文件变化事件|<br>|inotify_rm_watch|从监控列表中移除监控文件或者目录|<br>|read|读取事件信息|<br>|close|关闭文件描述符,并会移除所有在该描述符上监控|</p>
+<h2 id="事件通知"><a href="#事件通知" class="headerlink" title="事件通知"></a>事件通知</h2><p>在可监控事件中,我们已经了解inotify支持的文件事件.现在来看看这些当这些文件事件产生时,其发出通知的结构.在inotify中,事件通知结构用结构体inotify_event表示:</p>
+<pre><code class="hljs plain">struct inotify_event
+&#123;
+  int wd;               &#x2F;&#x2F;监控目标的watch描述符
+  uint32_t mask;        &#x2F;&#x2F;事件掩码
+  uint32_t cookie;      &#x2F;&#x2F;事件同步cookie
+  uint32_t len;         &#x2F;&#x2F;name字符串的长度
+  char name __flexarr;  &#x2F;&#x2F;被监视目标的路径名
+  &#125;;</code></pre>
+<p>这里需要记住一点:name字段并不是什么时候都有的:只有要监控的目标是一个目录,且产生的事件与目录内部的文件或子目录相关,且与目录本身无关时才会提供相应的name字段.<br>cookie用于关联被观察对象的IN_MOVED_FROM事件和IN_MOVED_TO 事件. </p>
+<h2 id="使用流程"><a href="#使用流程" class="headerlink" title="使用流程"></a>使用流程</h2><p>了解以上之后,那么该怎么用呢?要实现对文件或者目录的监控需要经过以下几个步骤:</p>
+<h3 id="1-创建inotify实例"><a href="#1-创建inotify实例" class="headerlink" title="1. 创建inotify实例"></a>1. 创建inotify实例</h3><p>在应用程序中,首先需要创建inotify实例:</p>
+<pre><code class="hljs c++"><span class="hljs-keyword">int</span> fd=inotify_init();</code></pre>
+<p>该方法创建了一个inotify实例,并返回一个文件描述符以便能够通过这个描述符访问到inotify实例.</p>
+<h3 id="2-添加监控"><a href="#2-添加监控" class="headerlink" title="2. 添加监控"></a>2. 添加监控</h3><p>在获得inotify实例产生的文件描述符之后,我们就可以为其添加watch.另外,我们也可以使用mask(事件掩码)来设置我们想监控的事件类型.当然可以我们也可以使用IN_ALL_EVENTS监控所有事件:</p>
+<pre><code class="hljs c++"><span class="hljs-keyword">int</span> wd=inotify_add_watch(fd,path,mask)</code></pre>
+<p><strong><em>补充:</em></strong><br>此处的fd即inotify_init()方法返回的文件描述符.每个文件描述符都有一个排序的事件序列.path则是需要监控的文件或者目录的路径.mask则是事件掩码,它表示应用程序对哪些事件感兴趣.</p>
+<p>文件系统产生的事件由Watch对象来管理,该方法将返回的wd就是Watch对象的句柄.</p>
+<h3 id="3-等待事件与循环处理"><a href="#3-等待事件与循环处理" class="headerlink" title="3. 等待事件与循环处理"></a>3. 等待事件与循环处理</h3><p>在为inotify实例添加watch之后,接下来就是等待事件了.为了能不断的处理事件,我们将其放在循环体当中.<br>在循环中,通过read()方法可以一次获得多个事件.在没有事件产生时,read()被阻塞,一旦有事件产生,那么我们就可以读取事件到的我们设置的事件数组中,然后对事件数组进行处理,其简单代码如下:</p>
+<pre><code class="hljs c++"><span class="hljs-comment">//事件数组,自定义设置,这里我们设置为128</span>
+<span class="hljs-keyword">char</span> event_buf[<span class="hljs-number">128</span>];
+
+<span class="hljs-keyword">while</span>(<span class="hljs-literal">true</span>)&#123;
+     <span class="hljs-keyword">int</span> num_bytes=<span class="hljs-built_in">read</span>(fd,event_buf,len);
+     <span class="hljs-comment">//处理事件</span>
+     handleEvent(event_buf);
+     <span class="hljs-comment">//....省略....</span>
+	&#125;</code></pre>
+<p><strong><em>补充</em></strong><br>event_buf是一个事件数组,用于接受文件变化所产生的事件(inotify_event).len则指定了要读的长度.通常来说,len大于事件数组的大小,很多时候,我们也会直接取事件数组的大小来作为len.</p>
+<h3 id="4-停止监控"><a href="#4-停止监控" class="headerlink" title="4.停止监控"></a>4.停止监控</h3><p>当需要停止监控的时候,需要为文件描述符删除watch:</p>
+<pre><code class="hljs c++"><span class="hljs-keyword">int</span> r=inotify_rm_watch(fd,wd);</code></pre>
+<p>此处的fd也是在创建inotify时返回的文件描述符,wd则是上面提到watch对象的句柄.</p>
+<p>到现在,我们已经对inotity有了初步的理解,感兴趣的童鞋可以自行研究.我们的重点还是Android中FileObserver的实现.接下来,我们真正的开始了解FileObserver的实现.</p>
+<h1 id="FileObserver实现原理"><a href="#FileObserver实现原理" class="headerlink" title="FileObserver实现原理"></a>FileObserver实现原理</h1><p>我们知道Android 1.5时对应的linux内核已经是2.6.26,因此完全可以在Android上利用inotify机制来实现对文件的监控.Google很显然意识到了这一点,并且帮我们在inotify的基础上进行封装—FileObserver,以实现监听文件访问,创建,修改,删除等操作</p>
+<p>接下来,来看一下FileObserver如何借助inotify实现文件监控的.</p>
+<h2 id="监控线程初始化"><a href="#监控线程初始化" class="headerlink" title="监控线程初始化"></a>监控线程初始化</h2><p>在FileObserver中存在一个静态内部类ObserverThread,该线程类是实现了文件监控的过程:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FileObserver</span> </span>&#123;
+    <span class="hljs-comment">//可监控的事件</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> ALL_EVENTS = ACCESS | MODIFY | ATTRIB | CLOSE_WRITE
+            | CLOSE_NOWRITE | OPEN | MOVED_FROM | MOVED_TO | DELETE | CREATE
+            | DELETE_SELF | MOVE_SELF;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ObserverThread</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Thread</span> </span>&#123;
+        <span class="hljs-comment">//....省略多行代码....</span>
+    &#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> ObserverThread s_observerThread;
+
+    <span class="hljs-keyword">static</span> &#123;
+        s_observerThread = <span class="hljs-keyword">new</span> ObserverThread();
+        s_observerThread.start();
+    &#125;
+
+       <span class="hljs-comment">//....省略多行代码....</span>
+
+&#125;</code></pre>
+<p>不难发现发现FileObserver通过静态代码块的方式构造了s_observerThread对象,我们来看一下其构造过程:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">ObserverThread</span><span class="hljs-params">()</span> </span>&#123;
+       super(<span class="hljs-string">"FileObserver"</span>);
+       m_fd = init();
+   &#125;</code></pre>
+<p>这里又调用natvie方法<code>init()</code>.既然这样,我们就在深入一下,看看init()方法的实现(现在,是不是发现我们自己编译源码的好处了?)该方法的实现在: /frameworks/base/core/jni/android_util_FileObserver.cpp</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">static</span> jint <span class="hljs-title">android_os_fileobserver_init</span><span class="hljs-params">(JNIEnv* env, jobject object)</span></span>
+<span class="hljs-function"></span>&#123;
+<span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(__linux__)</span>
+    <span class="hljs-keyword">return</span> (jint)inotify_init();
+<span class="hljs-meta">#<span class="hljs-meta-keyword">else</span></span>
+    <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;
+<span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span>
+&#125;</code></pre>
+
+<p>其实现非常简单，就是调用inotify中的inotify_init()来创建一个inotify实例。回到FileObserver中来看s_ObserverThread的启动：</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;
+            observe(m_fd);
+        &#125;</code></pre>
+<p>这里同样是调用natvie方法<code>observe(int fd)</code>：</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">android_os_fileobserver_observe</span><span class="hljs-params">(JNIEnv* env, jobject object, jint fd)</span></span>
+<span class="hljs-function"></span>&#123;
+<span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(__linux__)</span>
+	
+	<span class="hljs-comment">//设置事件数组</span>
+    <span class="hljs-keyword">char</span> event_buf[<span class="hljs-number">512</span>];
+    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">inotify_event</span>* <span class="hljs-title">event</span>;</span>
+
+    <span class="hljs-comment">//循环处理读到的事件</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>)
+    &#123;
+        <span class="hljs-keyword">int</span> event_pos = <span class="hljs-number">0</span>;
+        <span class="hljs-comment">//读取事件</span>
+        <span class="hljs-keyword">int</span> num_bytes = <span class="hljs-built_in">read</span>(fd, event_buf, <span class="hljs-keyword">sizeof</span>(event_buf));
+
+        <span class="hljs-keyword">if</span> (num_bytes &lt; (<span class="hljs-keyword">int</span>)<span class="hljs-keyword">sizeof</span>(*event))
+        &#123;
+            <span class="hljs-keyword">if</span> (errno == EINTR)
+                <span class="hljs-keyword">continue</span>;
+
+            ALOGE(<span class="hljs-string">"***** ERROR! android_os_fileobserver_observe() got a short event!"</span>);
+            <span class="hljs-keyword">return</span>;
+        &#125;
+
+		<span class="hljs-comment">//处理事件数组</span>
+        <span class="hljs-keyword">while</span> (num_bytes &gt;= (<span class="hljs-keyword">int</span>)<span class="hljs-keyword">sizeof</span>(*event))
+        &#123;
+            <span class="hljs-keyword">int</span> event_size;
+            event = (struct inotify_event *)(event_buf + event_pos);
+
+            jstring path = <span class="hljs-literal">NULL</span>;
+
+            <span class="hljs-keyword">if</span> (event-&gt;len &gt; <span class="hljs-number">0</span>)
+            &#123;
+                path = env-&gt;NewStringUTF(event-&gt;name);
+            &#125;
+           
+           <span class="hljs-comment">//调用ObserverThread中的onEvent方法 </span>
+            env-&gt;CallVoidMethod(object, method_onEvent, event-&gt;wd, event-&gt;mask, path);
+            <span class="hljs-keyword">if</span> (env-&gt;ExceptionCheck()) &#123;
+                env-&gt;ExceptionDescribe();
+                env-&gt;ExceptionClear();
+            &#125;
+            <span class="hljs-keyword">if</span> (path != <span class="hljs-literal">NULL</span>)
+            &#123;
+                env-&gt;DeleteLocalRef(path);
+            &#125;
+
+            event_size = <span class="hljs-keyword">sizeof</span>(*event) + event-&gt;len;
+            num_bytes -= event_size;
+            event_pos += event_size;
+        &#125;
+    &#125;
+
+<span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span>
+&#125;</code></pre>
+<p>不难看出,此处的循环主要就是从inotity中取出事件,然后回调ObserverThread中的<code>onEvent()</code>方法.现在,回到ObserverThread中的<code>onEvent()</code>方法中:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onEvent</span><span class="hljs-params">(<span class="hljs-keyword">int</span> wfd, <span class="hljs-keyword">int</span> mask, String path)</span> </span>&#123;
+            <span class="hljs-comment">// look up our observer, fixing up the map if necessary...</span>
+            FileObserver observer = <span class="hljs-keyword">null</span>;
+
+            <span class="hljs-keyword">synchronized</span> (m_observers) &#123;
+                <span class="hljs-comment">//根据wfd找出FileObserver对象</span>
+                WeakReference weak = m_observers.get(wfd);
+                <span class="hljs-keyword">if</span> (weak != <span class="hljs-keyword">null</span>) &#123;  <span class="hljs-comment">// can happen with lots of events from a dead wfd</span>
+                    observer = (FileObserver) weak.get();
+                    <span class="hljs-keyword">if</span> (observer == <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">//observer已经被回收时,从m_observers中删除该对象</span>
+                        m_observers.remove(wfd);
+                    &#125;
+                &#125;
+            &#125;
+
+            <span class="hljs-comment">// ...then call out to the observer without the sync lock held</span>
+            <span class="hljs-keyword">if</span> (observer != <span class="hljs-keyword">null</span>) &#123;
+                <span class="hljs-keyword">try</span> &#123;
+                    <span class="hljs-comment">//回调给FileObserver中的onEvent方法进行处理</span>
+                    observer.onEvent(mask, path);
+                &#125; <span class="hljs-keyword">catch</span> (Throwable throwable) &#123;
+                    Log.wtf(LOG_TAG, <span class="hljs-string">"Unhandled exception in FileObserver "</span> + observer, throwable);
+                &#125;
+            &#125;
+        &#125;</code></pre>
+<p>FileObserver中的<code>onEvent()</code>为抽象方法,也就是要求你继承FileObserver,并实现该方法,在其中做相关的操作.<br>到现在为止我们已经明白了ObserverThread如何被启动,以及如何获取inotify中的事件,并回调给上层进行处理.</p>
+<h2 id="启动监控"><a href="#启动监控" class="headerlink" title="启动监控"></a>启动监控</h2><p>上面提到m_observers表,该表维护着已经注册的FileObserver对象.接下来,我们就就来看看FileObserver中的<code>startWatching()</code>方法,该方法注册FileObserver对象,也是启动监控的过程:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">startWatching</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (m_descriptor &lt; <span class="hljs-number">0</span>) &#123;
+            m_descriptor = s_observerThread.startWatching(m_path, m_mask, <span class="hljs-keyword">this</span>);
+        &#125;
+    &#125;</code></pre>
+<p>具体的注册操作委托给s_observerThread中的<code>startWatching()</code>:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">startWatching</span><span class="hljs-params">(String path, <span class="hljs-keyword">int</span> mask, FileObserver observer)</span> </span>&#123;
+            <span class="hljs-comment">//调用native方法startWatching,并得到一个watch对象的句柄</span>
+            <span class="hljs-keyword">int</span> wfd = startWatching(m_fd, path, mask);
+
+            Integer i = <span class="hljs-keyword">new</span> Integer(wfd);
+            <span class="hljs-keyword">if</span> (wfd &gt;= <span class="hljs-number">0</span>) &#123;
+                <span class="hljs-keyword">synchronized</span> (m_observers) &#123;
+                    <span class="hljs-comment">//将watch对象句柄和当前FileObserver关联</span>
+                    m_observers.put(i, <span class="hljs-keyword">new</span> WeakReference(observer));
+                &#125;
+            &#125;
+
+            <span class="hljs-keyword">return</span> i;
+        &#125;</code></pre>
+<p>该方法中同样调用了native方法,其具体实现是:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">static</span> jint <span class="hljs-title">android_os_fileobserver_startWatching</span><span class="hljs-params">(JNIEnv* env, jobject object, jint fd, jstring pathString, jint mask)</span></span>
+<span class="hljs-function"></span>&#123;
+    <span class="hljs-keyword">int</span> res = <span class="hljs-number">-1</span>;
+<span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(__linux__)</span>
+    <span class="hljs-keyword">if</span> (fd &gt;= <span class="hljs-number">0</span>)
+    &#123;
+        <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span>* path = env-&gt;GetStringUTFChars(pathString, <span class="hljs-literal">NULL</span>);
+
+        res = inotify_add_watch(fd, path, mask);
+
+        env-&gt;ReleaseStringUTFChars(pathString, path);
+    &#125;
+<span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span>
+    <span class="hljs-keyword">return</span> res;
+&#125;</code></pre>
+<p>不难看出,这里通过inotify的<code>inotify_add_watch()</code>为上面生成的inotify对象添加watch对象,并将watch对象的句柄返回给ObserverThread.</p>
+<h2 id="停止监控"><a href="#停止监控" class="headerlink" title="停止监控"></a>停止监控</h2><p>到现在我们已经了解了如何注册watch句柄到FileObserver对象.有了注册的过程,当然少不了反注册的过程.同样,FileObserver为我们提供了<code>stopWatching()</code>来实现反注册,即停止监控的过程:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">stopWatching</span><span class="hljs-params">()</span> </span>&#123;
+       <span class="hljs-keyword">if</span> (m_descriptor &gt;= <span class="hljs-number">0</span>) &#123;<span class="hljs-comment">//已经注册过的才能反注册</span>
+           s_observerThread.stopWatching(m_descriptor);
+           m_descriptor = -<span class="hljs-number">1</span>;
+       &#125;
+   &#125;</code></pre>
+<p>具体的实现也是交给了s_observerThread的<code>stopWatching()</code>方法:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">stopWatching</span><span class="hljs-params">(<span class="hljs-keyword">int</span> descriptor)</span> </span>&#123;
+            stopWatching(m_fd, descriptor);
+        &#125;</code></pre>
+<p>接着委托给了natvie方法:</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">android_os_fileobserver_stopWatching</span><span class="hljs-params">(JNIEnv* env, jobject object, jint fd, jint wfd)</span></span>
+<span class="hljs-function"></span>&#123;
+<span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(__linux__)</span>
+    inotify_rm_watch((<span class="hljs-keyword">int</span>)fd, (<span class="hljs-keyword">uint32_t</span>)wfd);
+<span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span>
+&#125;</code></pre>
+<p>这里的实现非常简单,就是调用inotify_rm_watch方法来解除inotify实例和watch实例的关系.</p>
+<p>到现在为止我们已经弄明白了FileObserver的实现原理,为了方便理解,我们用一张简单的图来描述整个过程:</p>
+<p><img src="https://i.imgur.com/sdTuQlt.jpg" srcset="/img/loading.gif" alt="notify"></p>
+<h2 id="使用说明"><a href="#使用说明" class="headerlink" title="使用说明"></a>使用说明</h2><p>想必你已经了解了FileObserver的实现原理,接下里我们来看看如何使用.要想实现文件监控,我们只需要继承FileObserver类,并在<code>onEvent()</code>处理相关事件即可,简单的用代码演示一下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SDCardObserver</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">FileObserver</span> </span>&#123;
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SDCardObserver</span><span class="hljs-params">(String path)</span> </span>&#123;
+        <span class="hljs-keyword">super</span>(path);
+    &#125;
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onEvent</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i, String s)</span> </span>&#123;
+        <span class="hljs-keyword">switch</span> (i) &#123;
+            <span class="hljs-keyword">case</span> FileObserver.ALL_EVENTS:
+                <span class="hljs-comment">//全部事件</span>
+                <span class="hljs-keyword">break</span>;
+            <span class="hljs-keyword">case</span> FileObserver.CREATE:
+                <span class="hljs-comment">//文件被创建</span>
+                <span class="hljs-keyword">break</span>;
+            <span class="hljs-keyword">case</span> FileObserver.DELETE:
+                <span class="hljs-comment">//文件被删除</span>
+                <span class="hljs-keyword">break</span>;
+            <span class="hljs-keyword">case</span> FileObserver.MODIFY:
+                <span class="hljs-comment">//文件被修改</span>
+                <span class="hljs-keyword">break</span>;
+        &#125;
+    &#125;
+&#125;</code></pre>
+
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><p>这里我们需要注意两个问题:</p>
+<ol>
+<li>谨慎的选择你要处理的事件,否则可能造成死循环.</li>
+<li>当不再需要监听时,请记得停止监控</li>
+<li>需要注意FileObserver对象被垃圾回收的情况,从上面的原理中我们知道,该对象被回收后将不会再触发事件.</li>
+</ol>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Android/">Android</a>
+                    
+                      <a class="hover-with-bg" href="/tags/inotify/">inotify</a>
+                    
+                      <a class="hover-with-bg" href="/tags/FileObserver/">FileObserver</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2016/07/21/%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90AIL%E8%AF%AD%E8%A8%80%E5%8F%8Ainit.rc%E6%96%87%E4%BB%B6/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入分析AIL语言及init.rc</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2016/06/11/%E7%A9%BA%E6%9D%AF%E5%BF%83%E6%80%81/">
+                        <span class="hidden-mobile">空杯心态,一个程序员的自我修炼</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "从inotify机制到FileObserver原理&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

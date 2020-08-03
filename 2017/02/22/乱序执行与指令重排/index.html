@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>乱序执行与内存屏障 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2017-02-22 19:21">
+                    2017年2月22日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2.6k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    28
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>今天准备来聊聊乱序执行技术和内存屏障.为了能让大多数人理解,这里省略了很多不影响理解的旁枝末节,但由于我个人水平有限,如果不妥之处,希望各位指正.</p>
+<h1 id="顺执行技术"><a href="#顺执行技术" class="headerlink" title="顺执行技术"></a>顺执行技术</h1><p>在开始说乱序执行之前,得先把按序执行说一遍.在早期处理器中,处理器执行指令的顺序就是按照我们编写汇编代码的顺序执行的,换句话说此时处理器指令执行顺序和我们代码顺序一致,我们称之为按序执行(In Order Execution).我们以烧水泡茶为例来说明按序执行的过程(熟悉的同学会想起华罗庚的统筹学):</p>
+<ol>
+<li>洗水壶</li>
+<li>烧开水</li>
+<li>洗茶壶</li>
+<li>洗茶杯</li>
+<li>拿茶叶</li>
+<li>泡茶</li>
+</ol>
+<p>我们假设每一步代表一条指令的执行,此时从指令1到指令6执行的过程就是我们所说的按序执行.整个过程可以表示为:<br><img src="http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-2018-07-08-image-201807081214167.png" srcset="/img/loading.gif" alt="mage-20180708121416"></p>
+<p>按序执行对于早期处理器而言是一种行之有效的方案,但随着对时间的要求,我们希望上述过程能够在最短的时间内执行完成,这就促使人们迫切希望找到一种优化指令执行过程的方案.考虑上述执行过程,我们发现洗茶壶这步完全没有必要等待烧开水完成,也就是说洗茶壶和洗水杯完全可以和烧开水同时进行,这么一来,优化过的流程如图:<br><img src="http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-image-201807081215033.png" srcset="/img/loading.gif" alt="mage-20180708121503"></p>
+<p>这种通过改变原有执行顺序而减少时间的执行过程我们被称之为乱序执行,也称为重排.到现在为止,我们已经弄明白了什么是按序执行,什么是乱序.那接下来就看看处理器中的乱序执行技术.</p>
+<hr>
+<h1 id="乱序执行技术"><a href="#乱序执行技术" class="headerlink" title="乱序执行技术"></a>乱序执行技术</h1><h2 id="处理器乱序执行"><a href="#处理器乱序执行" class="headerlink" title="处理器乱序执行"></a>处理器乱序执行</h2><p>随着处理器流水线技术和多核技术的发展,目前的高级处理器通过提高内部逻辑元件的利用率来提高运行速度,通常会采用乱序执行技术.这里的乱序和上面谈到烧水煮茶的道理是一样的.</p>
+<p>先来看一张处理器的简要结构图:<br><img src="http://pbj0kpudr.bkt.clouddn.com/blog/2018-07-08-image-201807081215425.png" srcset="/img/loading.gif" alt="mage-20180708121542"></p>
+<p>处理器从L1 Cache中取出一批指令,分析找出那些不存在相互依赖的指令,同时将其发射到多个逻辑单元执行,比如现在有以下几条指令:</p>
+<pre><code class="hljs plain">LDR   R1, [R0]；
+ADD   R2, R1, R1；
+ADD   R4，R3，R3;</code></pre>
+<p>通过分析发现第二条指令和第一条指令存在依赖关系,但是和第3条指令无关,那么处理器就可能将其发送到两个逻辑单元去执行,因此上述的指令执行流程可能如下:<br><img src="https://i.imgur.com/do7onYV.jpg" srcset="/img/loading.gif" alt="mage-20180708121620"></p>
+<p>可以说乱序执行技术是处理器为提高运算速度而做出违背代码原有顺序的优化.在单核时代,处理器保证做出的优化不会导致执行结果远离预期目标,但在多核环境下却并非如此.</p>
+<p>首先多核时代,同时会有多个核执行指令,每个核的指令都可能被乱序;另外,处理器还引入了L1,L2等缓存机制,每个核都有自己的缓存,这就导致逻辑次序上后写入内存的数据未必真的最后写入.最终带来了这么一个问题:如果我们不做任何防护措施,处理器最终得出的结果和我们逻辑得出的结果大不相同.比如我们在一个核上执行数据的写入操作,并在最后写一个标记用来表示之前的数据已经准备好,然后从另一个核上通过判断这个标志来判定所需要的数据已经就绪,这种做法存在风险:标记位先被写入,但是之前的数据操作却并未完成(可能是未计算完成,也可能是数据没有从处理器缓存刷新到主存当中),最终导致另一个核中使用了错误的数据.</p>
+<h2 id="编译器指令重排"><a href="#编译器指令重排" class="headerlink" title="编译器指令重排"></a>编译器指令重排</h2><p>除了上述由处理器和缓存引起的乱序之外,现代编译器同样提供了乱序优化.之所以出现编译器乱序优化其根本原因在于处理器每次只能分析一小块指令,但编译器却能在很大范围内进行代码分析,从而做出更优的策略,充分利用处理器的乱序执行功能.</p>
+<h2 id="乱序的分类"><a href="#乱序的分类" class="headerlink" title="乱序的分类"></a>乱序的分类</h2><p>现在来总结下所有可能发生乱序执行的情况:</p>
+<ul>
+<li>现代处理器采用指令并行技术,在不存在数据依赖性的前提下,处理器可以改变语句对应的机器指令的执行顺序来提高处理器执行速度</li>
+<li>现代处理器采用内部缓存技术,导致数据的变化不能及时反映在主存所带来的乱序.</li>
+<li>现代编译器为优化而重新安排语句的执行顺序</li>
+</ul>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>尽管我们看到乱序执行初始目的是为了提高效率,但是它看来其好像在这多核时代不尽人意,其中的某些”自作聪明”的优化导致多线程程序产生各种各样的意外.因此有必要存在一种机制来消除乱序执行带来的坏影响,也就是说应该允许程序员显式的告诉处理器对某些地方禁止乱序执行.这种机制就是所谓内存屏障.不同架构的处理器在其指令集中提供了不同的指令来发起内存屏障,对应在编程语言当中就是提供特殊的关键字来调用处理器相关的指令.</p>
+<hr>
+<h1 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h1><h2 id="处理器乱序规则"><a href="#处理器乱序规则" class="headerlink" title="处理器乱序规则"></a>处理器乱序规则</h2><p>上面我们说了处理器会发生指令重排,现在来简单的看看常见处理器允许的重排规则,换言之就是处理器可以对那些指令进行顺序调整:</p>
+<table>
+<thead>
+<tr>
+<th>处理器</th>
+<th>Load-Load</th>
+<th>Load-Store</th>
+<th>Store-Store</th>
+<th>Store-Load</th>
+<th>数据依赖</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>x86</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>Y</td>
+<td>N</td>
+</tr>
+<tr>
+<td>PowerPC</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>N</td>
+</tr>
+<tr>
+<td>ia64</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>N</td>
+</tr>
+</tbody></table>
+<p>表格中的Y表示前后两个操作允许重排,N则表示不允许重排.与这些规则对应是的禁止重排的内存屏障.</p>
+<p>注意:处理器和编译都会遵循数据依赖性,不会改变存在数据依赖关系的两个操作的顺序.所谓的数据依赖性就是如果两个操作访问同一个变量,且这两个操作中有一个是写操作,那么久可以称这两个操作存在数据依赖性.举个简单例子:</p>
+<pre><code class="hljs plain">a&#x3D;100;&#x2F;&#x2F;write
+b&#x3D;a;&#x2F;&#x2F;read
+
+或者
+a&#x3D;100;&#x2F;&#x2F;write
+a&#x3D;2000;&#x2F;&#x2F;write
+或者
+a&#x3D;b;&#x2F;&#x2F;read
+b&#x3D;12;&#x2F;&#x2F;write</code></pre>
+<p>以上所示的,两个操作之间不能发生重排,这是处理器和编译所必须遵循的.当然这里指的是发生在单个处理器或单个线程中.</p>
+<h2 id="内存屏障的分类"><a href="#内存屏障的分类" class="headerlink" title="内存屏障的分类"></a>内存屏障的分类</h2><p>在开始看一下表格之前,务必确保自己了解Store和Load指令的含义.简单来说,Store就是将处理器缓存中的数据刷新到内存中,而Load则是从内存拷贝数据到缓存当中.</p>
+<table>
+<thead>
+<tr>
+<th>屏障类型</th>
+<th>指令示例</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LoadLoad Barriers</td>
+<td>Load1;LoadLoad;Load2</td>
+<td>该屏障确保Load1数据的装载先于Load2及其后所有装载指令的的操作</td>
+</tr>
+<tr>
+<td>StoreStore Barriers</td>
+<td>Store1;StoreStore;Store2</td>
+<td>该屏障确保Store1立刻刷新数据到内存(使其对其他处理器可见)的操作先于Store2及其后所有存储指令的操作</td>
+</tr>
+<tr>
+<td>LoadStore Barriers</td>
+<td>Load1;LoadStore;Store2</td>
+<td>确保Load1的数据装载先于Store2及其后所有的存储指令刷新数据到内存的操作</td>
+</tr>
+<tr>
+<td>StoreLoad Barriers</td>
+<td>Store1;StoreLoad;Load1</td>
+<td>该屏障确保Store1立刻刷新数据到内存的操作先于Load2及其后所有装载装载指令的操作.它会使该屏障之前的所有内存访问指令(存储指令和访问指令)完成之后,才执行该屏障之后的内存访问指令</td>
+</tr>
+</tbody></table>
+<p>StoreLoad Barriers同时具备其他三个屏障的效果,因此也称之为全能屏障,是目前大多数处理器所支持的,但是相对其他屏障,该屏障的开销相对昂贵.在x86架构的处理器的指令集中,lock指令可以触发StoreLoad Barriers.</p>
+<p>现在我们综合重排规则和内存屏障类型来说明一下.比如x86架构的处理器中允许处理器对Store-Load操作进行重排,与之对应有StoreLoad Barriers禁止其重排.</p>
+<hr>
+<h1 id="as-if-serial语义"><a href="#as-if-serial语义" class="headerlink" title="as-if-serial语义"></a>as-if-serial语义</h1><p>无论是处理器还是编译器,不管怎么重排都要保证(单线程)程序的执行结果不能被改变,这就是as-if-serial语义.比如烧水煮茶的最终结果永远是煮茶,而不能变成烧水.为了遵循这种语义,处理器和编译器不能对存在数据依赖性的操作进行重排,因为这种重排会改变操作结果,比如对:</p>
+<pre><code class="hljs plain">a&#x3D;100;&#x2F;&#x2F;write
+b&#x3D;a;&#x2F;&#x2F;read</code></pre>
+<p>重排为:</p>
+<pre><code class="hljs plain">b&#x3D;a;
+a&#x3D;100;</code></pre>
+<p>此时b的值就是不正确的.如果不存在操作之间不存在数据依赖,那么这些操作就可能被处理器或编译器进行重排,比如:</p>
+<pre><code class="hljs plain">a&#x3D;10;
+b&#x3D;200;
+result&#x3D;a*b;</code></pre>
+<p>它们之间的依赖关系如图:<br><img src="https://i.imgur.com/6pAc8j5.jpg" srcset="/img/loading.gif" alt="mage-20180708121658"></p>
+<p>由于<code>a=10</code>和<code>b=200</code>之间不存在依赖关系,因此编译器或处理可以这两两个操作进行重排,因此最终执行顺序可能有以下两种情况:</p>
+<p><img src="https://i.imgur.com/26BprKT.jpg" srcset="/img/loading.gif" alt="mage-20180708121731"><br>但无论哪种执行顺序,最终的结果都是对的.</p>
+<p>正是因为as-if-serial的存在,我们在编写单线程程序时会觉得好像它就是按代码的顺序执行的,这让我们可以不必关心重排的影响.换句话说,如果你从来没有编写多线程程序的需求,那就不需要关注今天我所说的一切.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/as-if-serial/">as-if-serial</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Java/">Java</a>
+                    
+                      <a class="hover-with-bg" href="/tags/CPU/">CPU</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/02/28/%E4%BB%8EJVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E8%B0%88%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">从JVM内存模型到线程安全</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2017/02/11/%E6%97%A5%E5%B8%B8%E4%B9%A6%E5%8D%95/">
+                        <span class="hidden-mobile">一个程序员的日常书单(2018)</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "乱序执行与内存屏障&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>深入分析AIL语言及init.rc - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2016-07-21 01:22">
+                    2016年7月21日 凌晨
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    3k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    37
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="AIL语法"><a href="#AIL语法" class="headerlink" title="AIL语法"></a>AIL语法</h1><p>AIL语言非常简单,主要包括两部分:结构语法及注释语法.下面我们就这两点进行说明</p>
+<h2 id="结构语法"><a href="#结构语法" class="headerlink" title="结构语法"></a>结构语法</h2><p>AIL语言包含主要包含五种结构语法:</p>
+<ol>
+<li>Actions</li>
+<li>Services</li>
+<li>Options</li>
+<li>Commands</li>
+<li>Imports</li>
+</ol>
+<p>需要注意,AIL采用是面向行的代码风格,即用换行符作为一条语句的分隔符,也就是在init.rc中以一条语句通常占据一行.如果一行写不下,可以在行尾添加反斜杠来链接到下一行,换言之,通过行尾添加反斜杠符可以将多行代码链接为一行代码.</p>
+<p>init.rc有许多Service和Action组成.那么什么是Service和Action呢?<br>Action和Service显式声明了一个语句块,而Commands和Options则分别用来定义Actions和Service(你可以理解为这是Action或者Service的属性).</p>
+<p>另外,我们声明的Commands和Options属于最近声明的语句块,即就近原则.需要注意,在第一个语句块之前的commands和options会被忽略.</p>
+<p>每个Actions或者Services应该有唯一的名字.对于名字重复的情况,Action和Service有自己不同的处理方式:</p>
+<blockquote>
+<p>如果第二个定义的Action的名字和之前存在Action的名字相同,第二个Action中定义的Commands将会被添加到已经存在的同名Action中.如果第二个定义的Service的名字和之前存在的Service的名字相同,第二个Service会被忽略并输出错误信息.</p>
+</blockquote>
+<h2 id="注释语法"><a href="#注释语法" class="headerlink" title="注释语法"></a>注释语法</h2><p>AIL中的注释语法和Shell脚本一致,以#开头即可</p>
+<h1 id="结构语法详解"><a href="#结构语法详解" class="headerlink" title="结构语法详解"></a>结构语法详解</h1><h2 id="Actions"><a href="#Actions" class="headerlink" title="Actions"></a>Actions</h2><p>Actions代表一些Action.Action代表一组命令,它包含一个触发器,该触发器决定了何时执行这个Action,即在什么情况下才能执行该Action中的定义命令.当一些条件满足触发器的条件时,该Action中定义的命令会被添加到要执行命令队列的尾部(如果这组命令已经在队列中,则不会再次添加).</p>
+<p>当一个Action从队列移除时,该Action定义的命令会依次被执行.</p>
+<p>Action的格式如下:</p>
+<pre><code class="hljs plain">on &lt;trgger&gt; [&amp;&amp; &lt;trigger&gt;]*
+   &lt;command&gt;
+   &lt;command&gt;
+   &lt;command&gt;
+   ...</code></pre>
+<p>不难发现Action都是以on开始,随后会定义触发器(trigger),接着便是为其定义命令(Commmand).在开始讲解Trigger和Command之前,我们先来看一段Action的示例代码:</p>
+<pre><code class="hljs plain">on boot
+    # 初始化网络
+    ifup lo
+    hostname localhost
+    domainname localdomain</code></pre>
+
+<h2 id="trigger"><a href="#trigger" class="headerlink" title="trigger"></a>trigger</h2><p>trigger即我们上面所说的触发器,本质上是一个字符串,能够匹配某种包含该字符串的事件.<br>trigger又被细分为事件触发器(event trigger)和属性触发器(property trigger).</p>
+<p>事件触发器可由”trigger”命令或初始化过程中通过QueueEventTrigger()触发,通常是一些事先定义的简单字符串,例如:<code>boot</code>,<code>late-init</code><br>属性触发器是当指定属性的变量值变成指定值时触发,其格式为<code>property:&lt;name&gt;=*</code> </p>
+<p>一个Action可以有多个属性触发器,但是最多有一个事件触发器.下面我们看两个例子:</p>
+<pre><code class="hljs plain">on boot &amp;&amp; property:a&#x3D;b</code></pre>
+<p>该Action只有在boot事件发生时,并且属性a和b相等的情况下才会被触发.</p>
+<pre><code class="hljs plain">on property:a&#x3D;b &amp;&amp; property:c&#x3D;d</code></pre>
+<p>该Action会在以下三种情况被触发:</p>
+<ul>
+<li>在启动时,如果属性a的值等于b并且属性c的值等于d</li>
+<li>在属性c的值已经是d的情况下,属性a的值被更新为b</li>
+<li>在属性a的值已经是b的情况下,属性c的值被更新为d</li>
+</ul>
+<p>当前AIL中常用的有以下几种事件触发器:</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>boot</code></td>
+<td>init.rc被装载后触发</td>
+</tr>
+<tr>
+<td><code>device-added-&lt;path&gt;</code></td>
+<td>指定设备被添加时触发</td>
+</tr>
+<tr>
+<td><code>device-removed-&lt;path&gt;</code></td>
+<td>指定设备被移除时触发</td>
+</tr>
+<tr>
+<td><code>service-exited-&lt;name&gt;</code></td>
+<td>在特定服务(service)退出时触发</td>
+</tr>
+<tr>
+<td><code>early-init</code></td>
+<td>初始化之前触发</td>
+</tr>
+<tr>
+<td><code>late-init</code></td>
+<td>初始化之后触发</td>
+</tr>
+<tr>
+<td><code>init</code></td>
+<td>初始化时触发</td>
+</tr>
+</tbody></table>
+<h2 id="Commands"><a href="#Commands" class="headerlink" title="Commands"></a>Commands</h2><p>Commands代表一组命令,在为Action设置了触发器后,就需要为其定义一组命令(command)了.AIL中内置了众多的命令,下面我们做个简单的说明:</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bootchart_init</code></td>
+<td>如果配置了bootcharing,则启动.包含在默认的init.rc中</td>
+</tr>
+<tr>
+<td><code>chmod</code></td>
+<td>更改文件权限</td>
+</tr>
+<tr>
+<td><code>chown &lt;owner&gt; &lt;group&gt; &lt;path&gt;</code></td>
+<td>更改文件的所有者和组</td>
+</tr>
+<tr>
+<td><code>calss_start &lt;serviceclass&gt;</code></td>
+<td>启动指定类别服务下的所有未启动的服务</td>
+</tr>
+<tr>
+<td><code>class_stop &lt;serviceclass&gt;</code></td>
+<td>停止指定类别服务类下的所有已运行的服务</td>
+</tr>
+<tr>
+<td><code>class_reset &lt;serviceclass&gt;</code></td>
+<td>停止指定类别的所有服务(服务还在运行),但不会禁用这些服务.后面可以通过class_start重启这些服务</td>
+</tr>
+<tr>
+<td><code>copy &lt;src&gt; &lt;dst&gt;</code></td>
+<td>复制文件,对二进制/大文件非常有用</td>
+</tr>
+<tr>
+<td><code>domainname &lt;name&gt;</code></td>
+<td>设置域名称</td>
+</tr>
+<tr>
+<td><code>enable &lt;servicename&gt;</code></td>
+<td>启用已经禁用的服务</td>
+</tr>
+<tr>
+<td><code>exec [ &lt;seclabel&gt; [ &lt;user&gt; [ &lt;group&gt; ]* ]]</code><br><code>--&lt;command&gt; [ &lt;argument&gt; ]*</code></td>
+<td>fork一个进程执行指定命令,如果有参数,则带参数执行</td>
+</tr>
+<tr>
+<td><code>export &lt;name&gt;</code></td>
+<td>在全局环境中,将<code>&lt;name&gt;</code>变量的值设置为<code>&lt;value&gt;</code>,即以键值对的方式设置全局环境变量.这些变量对之后的任何进程都有效</td>
+</tr>
+<tr>
+<td><code>hostname</code></td>
+<td>设置主机名</td>
+</tr>
+<tr>
+<td><code>ifup &lt;interface&gt;</code></td>
+<td>启动某个网络接口</td>
+</tr>
+<tr>
+<td><code>insmod [-f] &lt;path&gt; [&lt;options&gt;]</code></td>
+<td>加载指定路径下的驱动模块。-f强制加载，即不管当前模块是否和linux kernel匹配</td>
+</tr>
+<tr>
+<td><code>load_all_props</code></td>
+<td>从/system，/vendor加载属性。默认包含在init.rc</td>
+</tr>
+<tr>
+<td><code>load_persist_props</code></td>
+<td>当/data被加密时，加载固定属性</td>
+</tr>
+<tr>
+<td><code>loglevel &lt;level&gt;</code></td>
+<td>设置kernel日志等级</td>
+</tr>
+<tr>
+<td><code>mkdir &lt;path&gt; [mode] [owner] [group]</code></td>
+<td>在制定路径下创建目录</td>
+</tr>
+<tr>
+<td><code>mount_all &lt;fstab&gt; [ &lt;path&gt; ]*</code></td>
+<td>在给定的fs_mgr-format上调用fs_mgr_mount和引入rc文件</td>
+</tr>
+<tr>
+<td><code>mount &lt;type&gt; &lt;device&gt; &lt;dir&gt;[ &lt;flag&gt; ]* [&lt;options&gt;]</code></td>
+<td>挂载指定设备到指定目录下.</td>
+</tr>
+<tr>
+<td><code>powerct</code></td>
+<td>用来应对sys.powerctl中系统属性的变化,用于系统重启</td>
+</tr>
+<tr>
+<td><code>restart &lt;service&gt;</code></td>
+<td>重启制定服务，但不会禁用该服务</td>
+</tr>
+<tr>
+<td><code>restorecon &lt;path&gt; [ &lt;path&gt; ]*</code></td>
+<td>恢复指定文件到file_contexts配置中指定的安全上线文环境</td>
+</tr>
+<tr>
+<td><code>restorecon_recursive &lt;path&gt; [ &lt;path&gt; ]*</code></td>
+<td>以递归的方式恢复指定目录到file_contexts配置中指定的安全上下文中</td>
+</tr>
+<tr>
+<td><code>rm &lt;path&gt;</code></td>
+<td>删除指定路径下的文件</td>
+</tr>
+<tr>
+<td><code>rmdir &lt;path&gt;</code></td>
+<td>删除制定路径下的目录</td>
+</tr>
+<tr>
+<td><code>setprop &lt;name&gt; &lt;value&gt;</code></td>
+<td>将系统属性<code>&lt;name&gt;</code>的值设置为<code>&lt;value&gt;</code>,即以键值对的方式设置系统属性</td>
+</tr>
+<tr>
+<td><code>setrlimit &lt;resource&gt; &lt;cur&gt; &lt;max&gt;</code></td>
+<td>设置资源限制</td>
+</tr>
+<tr>
+<td><code>start &lt;service&gt;</code></td>
+<td>启动服务(如果该服务还未启动)</td>
+</tr>
+<tr>
+<td><code>stop &lt;service&gt;</code></td>
+<td>关闭服务(如果该服务还未停止)</td>
+</tr>
+<tr>
+<td><code>swapon_all &lt;fstab&gt;</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>symlink &lt;target&gt; &lt;path&gt;</code></td>
+<td>创建一个指向<code>&lt;path&gt;</code>的符合链接<code>&lt;target&gt;</code></td>
+</tr>
+<tr>
+<td><code>sysclktz &lt;mins_west_of_gmt&gt;</code></td>
+<td>设置系统时钟的基准,比如0代表GMT,即以格林尼治时间为准</td>
+</tr>
+<tr>
+<td><code>trigger &lt;event&gt;</code></td>
+<td>触发一个事件,将该action排在某个action之后(用于Action排队)</td>
+</tr>
+<tr>
+<td><code>verity_load_state</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>verity_update_state &lt;mount_point&gt;</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>wait &lt;path&gt; [ &lt;timeout&gt; ]</code></td>
+<td>等待一个文件是否存在,存在时立刻返回或者超时后返回.默认超时事件是5s</td>
+</tr>
+<tr>
+<td><code>write &lt;path&gt; &lt;content&gt;</code></td>
+<td>写内容到指定文件中</td>
+</tr>
+</tbody></table>
+<h2 id="Services"><a href="#Services" class="headerlink" title="Services"></a>Services</h2><p>Services代表一些Service.Service是一些在系统初始化时就启动或者退出时需要重启的程序.其格式如下:</p>
+<pre><code class="hljs plain">service &lt;name&gt; &lt;pathname&gt; [ &lt;argument&gt; ]*
+        &lt;option&gt;
+        &lt;option&gt;
+        ...</code></pre>
+<p>不难发现,首先需要为服务定义名字,并指定程序路径,然后便是通过option来修饰服务.同样先来看一下示例:</p>
+<pre><code class="hljs plain">service ueventd &#x2F;sbin&#x2F;ueventd
+    class core
+    critical
+    seclabel u:r:ueventd:s0</code></pre>
+
+
+<h2 id="Options"><a href="#Options" class="headerlink" title="Options"></a>Options</h2><p>Options代表一些option.option用来修饰服务,决定了服务在什么时候运行以及怎样运行.AIL中提供了非常多的option,下面我们做个简单说明:</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>console</code></td>
+<td>服务需要一个控制台.</td>
+</tr>
+<tr>
+<td><code>critical</code></td>
+<td>表示这是一个关键设备服务.如果4分钟内此服务退出4次以上,那么这个设备将重启进入recovery模式</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td>服务不会自动启动,必须通过服务名显式启动</td>
+</tr>
+<tr>
+<td><code>setenv &lt;name&gt; &lt;value&gt;</code></td>
+<td>在进程启动过程中,将环境变量<code>&lt;name&gt;</code>的值设置为<code>&lt;value&gt;</code>,即以键值对的方式设置环境变量</td>
+</tr>
+<tr>
+<td><code>socket &lt;name&gt; &lt;type&gt; &lt;perm&gt; [ &lt;user&gt; [ &lt;group&gt; [seclabel]]]</code></td>
+<td>创建一个unix域下的socket,其被命名<code>/dev/socket/&lt;name&gt;</code>. 并将其文件描述符fd返回给服务进程.其中,type必须为dgram,stream或者seqpacke,user和group默认是0.seclabel是该socket的SELLinux的安全上下文环境,默认是当前service的上下文环境,通过seclabel指定.</td>
+</tr>
+<tr>
+<td><code>user &lt;username&gt;</code></td>
+<td>在执行此服务之前切换用户名,当前默认的是root.自Android M开始,即使它要求linux capabilities,也应该使用该选项.很明显,为了获得该功能,进程需要以root用户运行</td>
+</tr>
+<tr>
+<td><code>group &lt;groupname&gt;</code></td>
+<td>在执行此服务之前切换组名,除了第一个必须的组名外,附加的组名用于设置进程的补充组(借助setgroup()函数),当前默认的是root</td>
+</tr>
+<tr>
+<td><code>seclabel &lt;seclabel&gt;</code></td>
+<td>在执行该服务之前修改其安全上下文,默认是init程序的上下文</td>
+</tr>
+<tr>
+<td><code>oneshot</code></td>
+<td>当服务退出时,不重启该服务</td>
+</tr>
+<tr>
+<td><code>class &lt;name&gt;</code></td>
+<td>为当前service设定一个类别.相同类别的服务将会同时启动或者停止,默认类名是default.</td>
+</tr>
+<tr>
+<td><code>onrestart</code></td>
+<td>当服务重启时执行该命令</td>
+</tr>
+<tr>
+<td><code>priority &lt;priority&gt;</code></td>
+<td>设置服务进程的优先级.优先级取值范围为-20~19,默认是0.可以通过setpriority()设置</td>
+</tr>
+</tbody></table>
+<h2 id="Imports"><a href="#Imports" class="headerlink" title="Imports"></a>Imports</h2><p>用来引入一个要解析的其他配置文件,通常用于当前配置文件的扩展.<br>其格式如下:</p>
+<pre><code class="hljs plain">import &lt;path&gt;</code></pre>
+<p>如果path是个一个目录,则该目录下的每个.rc文件都被引入.</p>
+<p>在初始化过程中,共有两次使用import来引入.rc文件:</p>
+<ol>
+<li>在初始化引导期间,引入/init.rc文件</li>
+<li>在执行mount_all命令时,引入/{system,vendor,odm}/etc/init/或者指定路径下的.rc文件</li>
+</ol>
+<p>我们来看看init.rc文件引入的.rc文件:</p>
+<pre><code class="hljs plain">import &#x2F;init.environ.rc
+import &#x2F;init.usb.rc
+import &#x2F;init.$&#123;ro.hardware&#125;.rc
+import &#x2F;init.$&#123;ro.zygote&#125;.rc</code></pre>
+
+
+<h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>Properties代表Init进程运行中的一些属性信息.在Init运行中,通过以下属性能够获取当前程序内部信息:</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>init.svc.&lt;name&gt;</code></td>
+<td>指定名称服务的状态,有stopped,stopping,runing,restarting这种四种状态</td>
+</tr>
+<tr>
+<td><code>init.action</code></td>
+<td>获取当前正在执行的action</td>
+</tr>
+<tr>
+<td><code>init.command</code></td>
+<td>获取当前正在执行的command</td>
+</tr>
+</tbody></table>
+<h1 id="文件示例"><a href="#文件示例" class="headerlink" title="文件示例"></a>文件示例</h1><p>到现在为止,有关AIL相关的知识基本介绍完毕,下面截取init.rc文件中的一段来做个简单的说明:</p>
+<pre><code class="hljs plain">&#x2F;&#x2F;引入其他要解析的rc文件
+import &#x2F;init.environ.rc
+import &#x2F;init.usb.rc
+import &#x2F;init.$&#123;ro.hardware&#125;.rc
+import &#x2F;init.usb.configfs.rc
+import &#x2F;init.$&#123;ro.zygote&#125;.rc
+
+#定义了一个action,在init初始化之前触发
+on early-init
+    # Set init and its forked children&#39;s oom_adj.
+    write &#x2F;proc&#x2F;1&#x2F;oom_score_adj -1000
+
+    # Disable sysrq from keyboard
+    write &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;sysrq 0
+
+    # Set the security context of &#x2F;adb_keys if present.
+    restorecon &#x2F;adb_keys
+
+    # Shouldn&#39;t be necessary, but sdcard won&#39;t start without it. http:&#x2F;&#x2F;b&#x2F;22568628.
+    mkdir &#x2F;mnt 0775 root system
+
+    # Set the security context of &#x2F;postinstall if present.
+    restorecon &#x2F;postinstall
+    
+    #启动ueventd服务
+    start ueventd
+    
+    #...省略多行...
+    
+#定义ueventd服务,设置服务为&#x2F;sbin&#x2F;ueventd
+service ueventd &#x2F;sbin&#x2F;ueventd
+    class core#为其设置类名为core
+    critical#表明这是一个关键服务
+    seclabel u:r:ueventd:s0 #设置其安全上下文</code></pre>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>AIL是一种非常简单的语言,主要用于定义启动流程中需要做的事情.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Android/">Android</a>
+                    
+                      <a class="hover-with-bg" href="/tags/AIL/">AIL</a>
+                    
+                      <a class="hover-with-bg" href="/tags/init-rc/">init.rc</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2016/09/20/Https%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Https简易工作原理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2016/07/14/%E4%BB%8Einotify%E5%88%B0FileObserver/">
+                        <span class="hidden-mobile">从inotify机制到FileObserver原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "深入分析AIL语言及init.rc&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

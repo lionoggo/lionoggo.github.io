@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>OpenJDK系列(二):从ClassFileParser谈Endian - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2018-06-22 15:20">
+                    2018年6月22日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    2k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    25
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="Endian"><a href="#Endian" class="headerlink" title="Endian"></a>Endian</h1><p>Endian即所谓的字节序,通俗点说就是多于一个类型的数据在内存中存取的顺序目前有两种字节序.</p>
+<ul>
+<li>Big-Endian: 也称为大端序:高位字节存放在内存的低地址端,低位字节存放在内存的高地址端.</li>
+<li>Little-Endian: 也称为小端序:高位字节存放在内存的高地址端,低位字节存放在内存的低地址端.</li>
+</ul>
+<h2 id="Endian与内存单元"><a href="#Endian与内存单元" class="headerlink" title="Endian与内存单元"></a>Endian与内存单元</h2><p>对于0x12345678而言,1234是高四位,5678是低四位.再以十进制的98来说9是高位,8是低位.现在回顾下内存的抽象模型:由不同的存储单元的构成,每个存储单元容量为1个字节.</p>
+<p><img src="https://i.imgur.com/quksnoX.png" srcset="/img/loading.gif" alt="image-20180905111953115"></p>
+<p>也就是说一个内存单元可以存放C语言中一个char类型数据,如果是short类型,则需要占用2个内存单元,而int类型则需要占据4个内存单元,比如int类型的305419896,其十六进制为0x12345678,需要占据4个内存单元,那这个4个内存单元中到底该如何存放数据呢?此时就用到了刚才的Endian.</p>
+<p>如果按照Big-Endian方式,其内存布局如下:</p>
+<p><img src="https://i.imgur.com/yU8oxKu.png" srcset="/img/loading.gif" alt="image-20180905105723144"></p>
+<p>如果按照Little-Endian方法,其内存布局如下:</p>
+<p><img src="https://i.imgur.com/Z66SXoD.png" srcset="/img/loading.gif" alt="image-20180905105758961"></p>
+<p>可以看出,对于超过一个字节类型的数据按照不同Endian会在内存中呈现不同的存放顺序,那为什么会出现大小端呢?</p>
+<h2 id="Endian起因"><a href="#Endian起因" class="headerlink" title="Endian起因"></a>Endian起因</h2><p>Endian产生根本原因在于CPU要想读写内存中的数据必须借助于寄存器.内存单元的容量一直保持1Byte不变,但寄存器却随着发展其容量不断增加,比如现代计算机的寄存器的容量都是超过1Byte的.这种寄存器容量和内存单元容量的差异最终导致字节序问题.寄存器如何保存超过一个字节数据必然涉及到某种顺序,这种顺序就体现在寄存器高低位的定义,而这种定义又会影响到数据在寄存器中的存放,最终在内存的存储顺序上体现出来.</p>
+<h1 id="Endian与Class解析"><a href="#Endian与Class解析" class="headerlink" title="Endian与Class解析"></a>Endian与Class解析</h1><p>Endian和字节流解析有什么联系呢?在单机上采用同一种模式进行存取操作时,CPU会自动处理这种变化,保证数据写入和读取之后的结果一致.但涉及到网络传输或者跨平台后,就无法保证双方使用的是同一种模式,如果不一致则会导致数据问题,因此需要进行大小端的转换.</p>
+<p>对于Java这种跨平台语言而言,同样需要关注这种差异.Java输出的字节信息都是大端模式,但JVM是却由C/C++编写的.在默认情况下C/C++的大小端模式与当前计算机硬件平台的大小端模式保持一致,如果JVM对此不做特殊处理,最终读取的字节码文件会有问题.在实际开发中,我们并不会关注该问题,这是因为JVM在读取字节码文件时做了特殊处理:如果检测到当前平台采用的是小端模式,会将其转为大端模式,以保证字节码文件的在JVM中的一致性.</p>
+<p>整个流程可以简单描述为:当一个类需要被加载时,最终会交给classload.cpp的<code>load_class()</code>,接下来由ClassFileParser.cpp的<code>parse_stream()</code>负责解析.class文件对应ClassFileStream,在解析的过程中会根据平台的Endian来决定是否要进行转换.</p>
+<h2 id="ClassFileStream"><a href="#ClassFileStream" class="headerlink" title="ClassFileStream"></a>ClassFileStream</h2><p>ClassFileStream是用于读取.class文件的输入流,其路径为:</p>
+<p><code>/OpenJDK10/OpenJDK10/hotspot/src/share/vm/classfile/classFileParser.hpp</code></p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClassFileStream</span>:</span> <span class="hljs-keyword">public</span> ResourceObj &#123;
+ <span class="hljs-keyword">private</span>:
+  <span class="hljs-keyword">const</span> u1* <span class="hljs-keyword">const</span> _buffer_start; <span class="hljs-comment">// Buffer bottom</span>
+  <span class="hljs-keyword">const</span> u1* <span class="hljs-keyword">const</span> _buffer_end;   <span class="hljs-comment">// Buffer top (one past last element)</span>
+  <span class="hljs-keyword">mutable</span> <span class="hljs-keyword">const</span> u1* _current;    <span class="hljs-comment">// Current buffer position</span>
+  <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span>* <span class="hljs-keyword">const</span> _source;     <span class="hljs-comment">// Source of stream (directory name, ZIP/JAR archive name)</span>
+  <span class="hljs-keyword">bool</span> _need_verify;             <span class="hljs-comment">// True if verification is on for the class file</span>
+    
+  .......  
+&#125;</code></pre>
+
+<p><code>_current</code>指针指向Java字节流中当前已经读取到的位置.当class文件刚被加载时,<code>_current</code>指向当前字节流的第一个字节所在的位置,后续随着解析操作的不断进行,<code>_current</code>指针不断的往后移动,直至当前字节流最后.</p>
+<p>根据字节码规范,该类中定义了用于读取固定字节长度的方法:</p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClassFileStream</span>:</span> <span class="hljs-keyword">public</span> ResourceObj &#123;
+	......
+        
+    <span class="hljs-keyword">public</span>: 
+     ClassFileStream(<span class="hljs-keyword">const</span> u1* <span class="hljs-built_in">buffer</span>,
+                  <span class="hljs-keyword">int</span> length,
+                  <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span>* source,
+                  <span class="hljs-keyword">bool</span> verify_stream = verify);
+    
+    <span class="hljs-function">u2 <span class="hljs-title">get_u2_fast</span><span class="hljs-params">()</span> <span class="hljs-keyword">const</span> </span>&#123;
+    	u2 res = Bytes::get_Java_u2((address)_current);
+    	_current += <span class="hljs-number">2</span>;
+    	<span class="hljs-keyword">return</span> res;
+    &#125;   
+    
+   <span class="hljs-function">u4 <span class="hljs-title">get_u4_fast</span><span class="hljs-params">()</span> <span class="hljs-keyword">const</span> </span>&#123;
+      u4 res = Bytes::get_Java_u4((address)_current);
+      _current += <span class="hljs-number">4</span>;
+      <span class="hljs-keyword">return</span> res;
+   &#125;
+    
+   <span class="hljs-function">u8 <span class="hljs-title">get_u8_fast</span><span class="hljs-params">()</span> <span class="hljs-keyword">const</span> </span>&#123;
+      u8 res = Bytes::get_Java_u8((address)_current);
+      _current += <span class="hljs-number">8</span>;
+      <span class="hljs-keyword">return</span> res;
+   &#125;
+   ......
+&#125;</code></pre>
+
+<p>除此之外也定义用于跳过固定字节码长度的常用方法,比如:<code>skip_u4_fast(int length)</code>等.在后续的字节码解析过程中,这几个方法非常常见.</p>
+<h2 id="ClassFileParser"><a href="#ClassFileParser" class="headerlink" title="ClassFileParser"></a>ClassFileParser</h2><p>ClassFileParser负责class文件解析,并尝试创建oops.创建ClassFileParser对象后会继续调用其parse_stream()`对当前类文件的字节码流进行解析.由于class文件解析相对复杂,因此这里只介绍magic number是如何被解析出来的.</p>
+<pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">ClassFileParser::parse_stream</span><span class="hljs-params">(<span class="hljs-keyword">const</span> ClassFileStream* <span class="hljs-keyword">const</span> stream,</span></span>
+<span class="hljs-function"><span class="hljs-params">                                   TRAPS)</span> </span>&#123;
+
+  assert(stream != <span class="hljs-literal">NULL</span>, <span class="hljs-string">"invariant"</span>);
+  assert(_class_name != <span class="hljs-literal">NULL</span>, <span class="hljs-string">"invariant"</span>);
+
+  <span class="hljs-comment">// BEGIN STREAM PARSING</span>
+  stream-&gt;guarantee_more(<span class="hljs-number">8</span>, CHECK);  <span class="hljs-comment">// magic, major, minor</span>
+  <span class="hljs-comment">// Magic value</span>
+  <span class="hljs-keyword">const</span> u4 magic = stream-&gt;get_u4_fast();
+  guarantee_property(magic == JAVA_CLASSFILE_MAGIC,
+                     <span class="hljs-string">"Incompatible magic value %u in class file %s"</span>,
+                     magic, CHECK);
+
+  <span class="hljs-comment">// Version numbers</span>
+  _minor_version = stream-&gt;get_u2_fast();
+  _major_version = stream-&gt;get_u2_fast();
+    
+  ......
+      
+&#125;</code></pre>
+
+<p>按照字节码规范,字节码前三部分依次是magic number,minor_version及major_version,分别占用u4,u2,u2,即4个字节,2个字节,2个字节,总共是8个字节,<code>guarantee_more(8, CHECK)</code>中的参数8含义就是如此:比较当前字节流文件剩余的长度是否大于想要读取的字节长度,否则报错.</p>
+<p>校验通过后,调用stream的get_u4_fast()方法从字节码流中读取u4长度的字节序,即ClassFileStream中<code>get_u4_fast()</code>:</p>
+<pre><code class="hljs c++"><span class="hljs-function">u4 <span class="hljs-title">get_u4_fast</span><span class="hljs-params">()</span> <span class="hljs-keyword">const</span> </span>&#123;
+  u4 res = Bytes::get_Java_u4((address)_current);
+  <span class="hljs-comment">// 读取完4个字节后,需要后移_current,因此需要对其进行+4  </span>
+  _current += <span class="hljs-number">4</span>;
+  <span class="hljs-keyword">return</span> res;
+&#125;</code></pre>
+
+<p>在该方法中,从字节流中读取4个字节的操作由<code>Bytes::get_Java_u4((address)_current)</code>实现.其中<strong>Bytes</strong>是与CPU架构相关的类.我这边CPU采用的是x86架构,因此调用的是:</p>
+<p><code>/OpenJDK10/hotspot/src/cpu/x86/vm/bytes_x86.hpp</code></p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bytes</span>:</span> AllStatic &#123;
+    ......
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">inline</span> u4 <span class="hljs-title">get_Java_u4</span><span class="hljs-params">(address p)</span> </span>&#123;
+        <span class="hljs-comment">// 调用模板方法get_Java()</span>
+        <span class="hljs-keyword">return</span> get_Java&lt;u4&gt;(p); 
+    &#125;
+    
+    ......
+     
+    <span class="hljs-keyword">template</span> &lt;<span class="hljs-keyword">typename</span> T&gt;
+	<span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">inline</span> T <span class="hljs-title">get_Java</span><span class="hljs-params">(<span class="hljs-keyword">const</span> address p)</span> </span>&#123;
+       <span class="hljs-comment">// 1.读取u4,即get_native&lt;u4&gt;(p) </span>
+       T x = get_native&lt;T&gt;(p);
+       <span class="hljs-comment">// 2.如果当前平台的字节序和Java不一样,即不是Big-Endian,需要进行转换</span>
+       <span class="hljs-comment">// 也就是将Little_Endian转为Big_Endian </span>
+       <span class="hljs-keyword">if</span> (Endian::is_Java_byte_ordering_different()) &#123;
+         <span class="hljs-comment">//3.大小端转换,即swap&lt;u4&gt;(x)  </span>
+         x = swap&lt;T&gt;(x);
+       &#125;
+       <span class="hljs-keyword">return</span> x;
+	&#125;       
+
+&#125;</code></pre>
+
+<p>在模板方法<code>get_Java()</code>先是调用与平台相关的函数<code>get_native&lt;u4&gt;()</code>来读取4个字节:</p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bytes</span>:</span> AllStatic &#123;
+    
+  <span class="hljs-keyword">template</span> &lt;<span class="hljs-keyword">typename</span> T&gt;
+  <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">inline</span> T <span class="hljs-title">get_native</span><span class="hljs-params">(<span class="hljs-keyword">const</span> <span class="hljs-keyword">void</span>* p)</span> </span>&#123;
+    assert(p != <span class="hljs-literal">NULL</span>, <span class="hljs-string">"null pointer"</span>);
+
+    T x;
+	<span class="hljs-comment">// is_aligned()用于判断当前值是否对齐与给定值,未对齐则使用memcpy从p指针出拷贝u4数据到x</span>
+    <span class="hljs-keyword">if</span> (is_aligned(p, <span class="hljs-keyword">sizeof</span>(T))) &#123;
+      <span class="hljs-comment">// 此处由于是读取u4,因此最终将指针p强转为u4*类型的指针.  </span>
+      x = *(T*)p;
+    &#125; <span class="hljs-keyword">else</span> &#123;
+      <span class="hljs-built_in">memcpy</span>(&amp;x, p, <span class="hljs-keyword">sizeof</span>(T));
+    &#125;
+
+    <span class="hljs-keyword">return</span> x;
+  &#125;   
+  
+  ......
+      
+&#125;</code></pre>
+
+<p>读取完成后判断当前平台的模式是否和Java中的一致,即当前是否是大端模式,如果不是则继续调用<code>swap&lt;u4&gt;()</code>实现小端到大端的转换.</p>
+<pre><code class="hljs c++"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bytes</span>:</span> AllStatic &#123;
+  ......
+      
+  <span class="hljs-comment">// Efficient swapping of byte ordering</span>
+  <span class="hljs-keyword">template</span> &lt;<span class="hljs-keyword">typename</span> T&gt;
+  <span class="hljs-function"><span class="hljs-keyword">static</span> T <span class="hljs-title">swap</span><span class="hljs-params">(T x)</span> </span>&#123;
+    <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">sizeof</span>(T)) &#123;
+    <span class="hljs-function"><span class="hljs-keyword">case</span> <span class="hljs-title">sizeof</span><span class="hljs-params">(u1)</span>: <span class="hljs-keyword">return</span> x</span>;
+    <span class="hljs-function"><span class="hljs-keyword">case</span> <span class="hljs-title">sizeof</span><span class="hljs-params">(u2)</span>: <span class="hljs-keyword">return</span> <span class="hljs-title">swap_u2</span><span class="hljs-params">(x)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">case</span> <span class="hljs-title">sizeof</span><span class="hljs-params">(u4)</span>: <span class="hljs-keyword">return</span> <span class="hljs-title">swap_u4</span><span class="hljs-params">(x)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">case</span> <span class="hljs-title">sizeof</span><span class="hljs-params">(u8)</span>: <span class="hljs-keyword">return</span> <span class="hljs-title">swap_u8</span><span class="hljs-params">(x)</span></span>;
+    <span class="hljs-keyword">default</span>:
+      guarantee(<span class="hljs-literal">false</span>, <span class="hljs-string">"invalid size: "</span> SIZE_FORMAT <span class="hljs-string">"\n"</span>, <span class="hljs-keyword">sizeof</span>(T));
+      <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+    &#125;
+  &#125;
+
+  <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">inline</span> u2   <span class="hljs-title">swap_u2</span><span class="hljs-params">(u2 x)</span></span>;                   <span class="hljs-comment">// compiler-dependent implementation</span>
+  <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">inline</span> u4   <span class="hljs-title">swap_u4</span><span class="hljs-params">(u4 x)</span></span>;                   <span class="hljs-comment">// compiler-dependent implementation</span>
+  <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">inline</span> u8   <span class="hljs-title">swap_u8</span><span class="hljs-params">(u8 x)</span></span>;
+&#125;</code></pre>
+
+<p>需要注意swap_u4()是夸平台,为了兼容,可以看到在<code>/OpenJDK10/OpenJDK10/hotspot/src/os_cpu</code>根据平台进行了不同的实现,比如我这边用的是<code>/OpenJDK10/hotspot/src/os_cpu/bsd_x86/vm/bytes_bsd_x86.inline.hpp</code>:</p>
+<p><img src="https://i.imgur.com/nu15eHO.png" srcset="/img/loading.gif" alt="image-20180905154857898"></p>
+<p>此处内嵌了一段汇编代码来实现大小端的转换.至此,我们已经清楚JVM是如何统一成大端模式的.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/OpenJDK/">OpenJDK</a>
+                    
+                      <a class="hover-with-bg" href="/tags/HotSpot/">HotSpot</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Endian/">Endian</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/06/27/OpenJDK%E7%B3%BB%E5%88%97(%E4%B8%89)_VM%E4%B8%ADCAS%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OpenJDK系列(三):JVM对CAS的设计与实现</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2018/06/20/OpenJDK%E7%B3%BB%E5%88%97(%E4%B8%80)_%E7%BC%96%E8%AF%91%E4%B8%8E%E8%B0%83%E8%AF%95/">
+                        <span class="hidden-mobile">OpenJDK系列(一):编译/调试与项目结构</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "OpenJDK系列(二):从ClassFileParser谈Endian&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

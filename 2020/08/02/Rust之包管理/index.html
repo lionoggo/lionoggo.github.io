@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Rust之包管理 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2020-08-02 23:29">
+                    2020年8月2日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    1.7k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    21
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <h1 id="Rust包管理"><a href="#Rust包管理" class="headerlink" title="Rust包管理"></a>Rust包管理</h1><p>title: Rust包管理<br>date: 2020-06-04 21:47:57<br>toc: true<br>tags: rust<br>categories: rust<br>description: Rust包管理机制,module,crate.</p>
+<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><h2 id="module"><a href="#module" class="headerlink" title="module"></a>module</h2><p><strong>模块 Module</strong> 用于将函数或结构体按照功能分组。我们通常把相似的函数或者实现相同功能的或者共同实现一个功能的函数和结构体划分到一个模块中。</p>
+<p>Rust中模块的概念类似其他语言中模块或者包的概念,以我们常用的Java为例,Rust模块等价于Java中的一个Package.</p>
+<h2 id="crate"><a href="#crate" class="headerlink" title="crate"></a>crate</h2><p>在Java中我们可以将Package组织为为Module,在Rust中同样如此:我们可以将Rust中的模块进一步组织为crate.</p>
+<blockquote>
+<p>crate中文翻译为箱|板条,个人感觉crate不够直观,甚至不如直接沿用其他语言的概念.</p>
+</blockquote>
+<p>crate是Rust语言的基本编译单元.在Rust中,一个可执行的二进制文件或者一个库就是一个crate.其中可执行二进制文件和库的唯一区别就是二进制文件中含有<code>main()</code>入口.</p>
+<h2 id="cargo"><a href="#cargo" class="headerlink" title="cargo"></a>cargo</h2><p>Rust采用cargo作为crate管理程序,简单来说cargo就是包管理器.比如Dart中使用pub来管理包.此外,Rust使用crates.io作为管理所有第三方包的中央存储服务器,这类似Dart中的pub.dev,android中的jcenter.</p>
+<table>
+<thead>
+<tr>
+<th>rust</th>
+<th>dart</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><img src="https://raw.githubusercontent.com/lionoggo/blog-images/master/img/image-20200802201756474.png" srcset="/img/loading.gif" alt=""></td>
+<td><img src="https://raw.githubusercontent.com/lionoggo/blog-images/master/img/image-20200802201818781.png" srcset="/img/loading.gif" alt="image-20200802201818781"></td>
+</tr>
+</tbody></table>
+<p>我们可以使用<code>cargo install</code>来从crates.io中安装需要的crate.</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>上述提到的几个术语,在其他语言中都有对应的概念,下表简单对比下:</p>
+<table>
+<thead>
+<tr>
+<th>Rust术语</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>crate</td>
+<td>Rust中编译的基本单元,等价于其他语言中的library中的概念,比如dart中的library</td>
+</tr>
+<tr>
+<td>module</td>
+<td>模块,等价于其他语言中package的概念,比如Java/dart中的package</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h1 id="module-1"><a href="#module-1" class="headerlink" title="module"></a>module</h1><h2 id="模块定义"><a href="#模块定义" class="headerlink" title="模块定义"></a>模块定义</h2><p>Rust中使用mod关键字来定义一个模块,根据访问权限,模块分为公开模块和私有模块,模块定义格式如下:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">mod</span> module_name &#123;
+	<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">function_name</span></span>() &#123;
+    <span class="hljs-comment">// code body</span>
+  &#125; 
+  
+	...
+&#125;</code></pre>
+
+<p>这里的module_name用于表示模块名,必须是一个合法的标志符,格式和函数名定义一样,如下所示:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">mod</span> desktop &#123;
+
+    <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">doctor</span></span>() &#123;
+       <span class="hljs-comment">// code body</span>
+    &#125;
+
+&#125; <span class="hljs-comment">/* desktop */</span></code></pre>
+
+<h2 id="公开模块-amp-私有模块"><a href="#公开模块-amp-私有模块" class="headerlink" title="公开模块&amp;私有模块"></a>公开模块&amp;私有模块</h2><p>Rust中模块和模块中函数默认都是私有权限,外部无法访问.如果需要公开模块或者函数给外部使用,需要使用pub关键字,格式如下:</p>
+<pre><code class="hljs rust"><span class="hljs-comment">// 公开模块</span>
+<span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> module_name &#123;
+  <span class="hljs-comment">// 公开函数</span>
+  <span class="hljs-keyword">pub</span> <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">function_name</span></span>() &#123;
+    
+  &#125;
+  
+  <span class="hljs-comment">// 私有函数</span>
+  <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">function_name</span></span>()&#123;
+    
+  &#125;
+&#125;</code></pre>
+
+<blockquote>
+<p>需要注意,私有模块中的函数必须都是私有的,公开模块中的函数可以是私有的,也可以是公有的.</p>
+</blockquote>
+<h2 id="嵌套module"><a href="#嵌套module" class="headerlink" title="嵌套module"></a>嵌套module</h2><p>Rust支持在一个模块中嵌套另一个模块,格式如下:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> first_module &#123;
+  <span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> second_module &#123;
+    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> third_module &#123;
+      <span class="hljs-keyword">pub</span> <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">say_hello</span></span>()&#123;
+          <span class="hljs-comment">// code body</span>
+      &#125;
+    &#125;
+  &#125;
+&#125;</code></pre>
+
+<p>上述代码中,first_module嵌套了second_module,而second_module又嵌套third_module.在third_module中定义了<code>say_hello()</code>.</p>
+<p>嵌套模块调用非常简单,只需要用<code>::</code>逐级限定模块名即可,比如<code>first_module::second_module::third_module::say_hello()</code></p>
+<h2 id="范例-模块定义与使用"><a href="#范例-模块定义与使用" class="headerlink" title="范例: 模块定义与使用"></a>范例: 模块定义与使用</h2><p>这里我们定义一个desktop模块,并提供一个用于进行检测的doctor方法:</p>
+<pre><code class="hljs rust"><span class="hljs-comment">// 定义</span>
+<span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> desktop &#123;
+
+    <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">doctor</span></span>() &#123;
+        <span class="hljs-built_in">println!</span>(<span class="hljs-string">"Checking..."</span>);
+    &#125;
+
+&#125; <span class="hljs-comment">/* desktop */</span>
+
+<span class="hljs-comment">// 调用</span>
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() &#123;
+    <span class="hljs-comment">// 全限定路径</span>
+    desktop::doctor();
+
+&#125;</code></pre>
+
+
+
+<h2 id="导入模块"><a href="#导入模块" class="headerlink" title="导入模块"></a>导入模块</h2><p>和C++类似,Rust使用use关键字来引入需要用到的外部模块中的函数和结构体,通过使用use关键字,我们可以预先引入外部模块的函数和构造体而无需再使用全限定模块.</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> desktop &#123;
+    <span class="hljs-keyword">pub</span> <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">doctor</span></span>() &#123;
+        <span class="hljs-built_in">println!</span>(<span class="hljs-string">"Checking..."</span>);
+    &#125;
+&#125;
+
+<span class="hljs-keyword">use</span> desktop::doctor;
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() &#123;
+    <span class="hljs-comment">// 无需全路径限定</span>
+    doctor();
+&#125;</code></pre>
+
+
+
+<h1 id="crate-1"><a href="#crate-1" class="headerlink" title="crate"></a>crate</h1><p>现在结合module来演示crate的使用.这里我们准备创建一个名为ugo的crate,其中有commander和desktop两个module.</p>
+<pre><code class="hljs shell">ugo
+	- commander
+	- module</code></pre>
+
+<h2 id="创建crate"><a href="#创建crate" class="headerlink" title="创建crate"></a>创建crate</h2><p>我们使用cargo来管理我们的rust工程,同样这里也用它来管理crate.首先我们来创建一个名为ugo的工作目录,接下来使用<code>cargo new module-name --lib</code>来创建名为module-name的模块:</p>
+<pre><code class="hljs shell">cargo new commander --lib
+cargo new module --lib</code></pre>
+
+<p>现在我们得到了如下结构的目录:</p>
+<pre><code class="hljs shell">ugo
+├── commander
+│   ├── Cargo.toml
+│   └── src
+│       ├── doctor.rs
+│       └── lib.rs
+└── desktop
+    ├── Cargo.toml
+    └── src
+        └── lib.rs</code></pre>
+
+<h3 id="Cargo-toml"><a href="#Cargo-toml" class="headerlink" title="Cargo.toml"></a>Cargo.toml</h3><p>cargo通过使用Cargo.toml来保存/设置库的一些基本数据,比如版本号,库名称,作者以及三方依赖等.其中toml是一种语义化的配置文件格式:</p>
+<pre><code class="hljs toml"><span class="hljs-section">[package]</span>
+<span class="hljs-attr">name</span> = <span class="hljs-string">"desktop"</span>  											<span class="hljs-comment"># 库名</span>
+<span class="hljs-attr">version</span> = <span class="hljs-string">"0.1.0"</span> 											<span class="hljs-comment"># 版本号</span>
+<span class="hljs-attr">authors</span> = [<span class="hljs-string">"author &lt;author@gmail.com&gt;"</span>] <span class="hljs-comment"># 作者</span>
+<span class="hljs-attr">edition</span> = <span class="hljs-string">"2018"</span>													
+
+<span class="hljs-comment"># See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html</span>
+
+<span class="hljs-section">[dependencies]</span>													<span class="hljs-comment"># 依赖</span></code></pre>
+
+
+
+<h2 id="lib-rs"><a href="#lib-rs" class="headerlink" title="lib.rs"></a>lib.rs</h2><p>每个crate中的lib.rs用于指定库公开了哪些可用的模块.使用cargo创建的crate中的lib.rs中默认会有一些代码,这里我们先直接删除.</p>
+<p>首先我们commander中添加一个doctor.rs,用于输出当前的环境信息:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">shell_vesion</span></span>() &#123;
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"Shell vesion"</span>);
+&#125;</code></pre>
+
+<p>接下来,我们在lib.rs中将doctor模块导出:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> doctor;</code></pre>
+
+<p>此时,commander结构如下:</p>
+<pre><code class="hljs shell">commander
+├── Cargo.toml
+└── src
+    ├── doctor.rs
+    └── lib.rs</code></pre>
+
+<p>同样的,我们为desktop也提供类似的实现,</p>
+<pre><code class="hljs rust"><span class="hljs-comment">// src/doctor.rs</span>
+<span class="hljs-keyword">pub</span> <span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">desktop_version</span></span>() &#123;
+        <span class="hljs-built_in">println!</span>(<span class="hljs-string">"Desktop platform"</span>);
+&#125;
+
+<span class="hljs-comment">// src/lib.rs</span>
+<span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> doctor;</code></pre>
+
+<p>现在我们可以通过cargo build来执行构建操作,同时它也可以用来检查我们crate是否有错误.进入commander/deskop下分别执行下,构建无误的情况下回输出下述信息:</p>
+<pre><code class="hljs shell"><span class="hljs-meta">$</span><span class="bash"> cargo build</span>
+   Compiling desktop v0.1.0 (/Users/lionoggo/Workspace/Rust/module_test/ugo/desktop)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.12s</code></pre>
+
+
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>现在我们来创建一个测试程序,在ugo目录下执行<code>cargo new main --bin</code>即可.ugo-main将使用我们上述的两个crate,并分别调用其函数,先来看下当前工程目录:</p>
+<pre><code class="hljs shell">ugo
+├── commander
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   └── src
+│       ├── doctor.rs
+│       └── lib.rs
+├── desktop
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   └── src
+│       ├── doctor.rs
+│       └── lib.rs
+└── main
+    ├── Cargo.toml
+    └── src
+        └── main.rs</code></pre>
+
+<p>解析来,打开main中额Cargo.toml,将commander/desktop两个crate配置为本地依赖:</p>
+<pre><code class="hljs toml"><span class="hljs-section">[package]</span>
+<span class="hljs-attr">name</span> = <span class="hljs-string">"ugo-main"</span>
+<span class="hljs-attr">version</span> = <span class="hljs-string">"0.1.0"</span>
+<span class="hljs-attr">authors</span> = [<span class="hljs-string">"author &lt;author@gmail.com&gt;"</span>]
+<span class="hljs-attr">edition</span> = <span class="hljs-string">"2018"</span>
+
+<span class="hljs-comment"># See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html</span>
+
+<span class="hljs-section">[dependencies]</span>
+<span class="hljs-comment"># 本地依赖</span>
+<span class="hljs-attr">commander</span> = &#123; path = <span class="hljs-string">"../commander"</span> &#125;
+<span class="hljs-attr">desktop</span> = &#123; path = <span class="hljs-string">"../desktop"</span> &#125;</code></pre>
+
+<p><img src="https://raw.githubusercontent.com/lionoggo/blog-images/master/img/image-20200802221705368.png" srcset="/img/loading.gif" alt=""></p>
+<h3 id="使用crate"><a href="#使用crate" class="headerlink" title="使用crate"></a>使用crate</h3><p>现在我们要在ugo-main中来使用上述两个crate.要想使用crate中的module,首先需要使用extern关键字引入外部库:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">extern</span> <span class="hljs-keyword">crate</span> desktop;
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">crate</span> commander;</code></pre>
+
+<p>接下来分别调用两个crate中的函数:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">extern</span> <span class="hljs-keyword">crate</span> desktop;
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">crate</span> commander;
+
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() &#123;
+    commander::doctor::shell_version();
+    desktop::doctor::desktop_version();
+&#125;</code></pre>
+
+<p>在上述代码中,我们使用全限定路径来调用函数,如果crate中的函数比较多,这样用起来五一很麻烦,此时可以使用use导入module:</p>
+<pre><code class="hljs rust"><span class="hljs-keyword">extern</span> <span class="hljs-keyword">crate</span> desktop;
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">crate</span> commander;
+
+<span class="hljs-keyword">use</span> desktop::doctor::desktop_version;
+<span class="hljs-keyword">use</span> commander::doctor::shell_version;
+
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() &#123;
+    shell_version();
+    desktop_version();
+&#125;</code></pre>
+
+<p>执行<code>cargo run</code>,不出意外,结果如下:</p>
+<pre><code class="hljs shell"><span class="hljs-meta">$</span><span class="bash"> cargo run</span>
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/ugo-main`
+Shell vesion
+Desktop platform</code></pre>
+
+
+
+
+
+
+
+
+
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2020/05/04/Vim%E9%AB%98%E9%98%B6%E6%8A%80%E5%B7%A7/">
+                        <span class="hidden-mobile">Vim高级使用技巧</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Rust之包管理&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

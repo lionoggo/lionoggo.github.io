@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>深入Android辅助服务架构与设计 - Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2018-03-22 19:30">
+                    2018年3月22日 晚上
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    6.2k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    92
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>首先我们需要明确在整个AccessibilityService体系中共包含三个部分,其结构基本如下:</p>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1fyj4wv7zqrj317a0o6tco.jpg" srcset="/img/loading.gif" alt="image-20181225174719637"></p>
+<ul>
+<li>被监控应用端: 即我们需要监控的应用,比如微信,系统某些界面等等;</li>
+<li>监控服务端: 用来实时接受来自被监控应用端的事件,并作出处理,即我们自行实现的AccessibilityService</li>
+<li>AccessibilityManagerService: 由于被监控应用端和监控服务端涉涉及跨进程通信,同时它们之间又是多对多的关系,因此为了需要引入中间管理器来对两端进行管理.(为了方便起见,后续我们简称为AMS,注意不要和ActivityManagerService进行混淆)</li>
+</ul>
+<p>需要注意的对于被监控客户端和AMS以及监控服务端和AMS而言,都可以单独的当成C-S架构来看:对于被监控客户端和AMS: 前者是客户端Client,后者是服务端Server;对于监控服务端和AMS: 前者是客户端Client,后者是Server.</p>
+<p>在后续的正文中,将按照 <code>监控服务端和AMS -&gt; 被监控客户端和AMS</code>的顺序来讲述,前者以AccessibilityService注册为主题,后者以AccessibilityEvnet分为为主旨.</p>
+<h1 id="AccessibilityService注册流程"><a href="#AccessibilityService注册流程" class="headerlink" title="AccessibilityService注册流程"></a>AccessibilityService注册流程</h1><p>在AccessibilityService注册中主要涉及AMS绑定我们自定义AccessibilityService的过程.在该阶段,当AMS检测到系统中AccessibilityService状态变化后会做出相应的处理,比如检测到某个AccessibilityService被安装到系统并被用户启用后,AMS会主动绑定AccessibilityService,这和绑定远程服务的流程一样.</p>
+<h2 id="AccessibilityService架构"><a href="#AccessibilityService架构" class="headerlink" title="AccessibilityService架构"></a>AccessibilityService架构</h2><p>在开发辅助服务时,需要我们继承AccessibilityService,那AccessibilityService到底是什么呢?首先来看一张基本结构图:</p>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1fyj5f0kwq7j31890u0akz.jpg" srcset="/img/loading.gif" alt="image-20181225180514185"></p>
+<p>AccessibilityService继承自Service,也就是说它就是一个标准的服务,该服务只能由AMS进行绑定.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AccessibilityService</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Service</span> </span>&#123;
+    
+     <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> IBinder <span class="hljs-title">onBind</span><span class="hljs-params">(Intent intent)</span> </span>&#123;
+        <span class="hljs-comment">// AMS主动绑定时,将返回IAccessibilityServiceClientWrapper实例</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> IAccessibilityServiceClientWrapper(<span class="hljs-keyword">this</span>, getMainLooper(), <span class="hljs-keyword">new</span> Callbacks() &#123;
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onServiceConnected</span><span class="hljs-params">()</span> </span>&#123;
+                AccessibilityService.<span class="hljs-keyword">this</span>.dispatchServiceConnected();
+            &#125;
+
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onInterrupt</span><span class="hljs-params">()</span> </span>&#123;
+                AccessibilityService.<span class="hljs-keyword">this</span>.onInterrupt();
+            &#125;
+
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+                AccessibilityService.<span class="hljs-keyword">this</span>.onAccessibilityEvent(event);
+            &#125;
+
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">(<span class="hljs-keyword">int</span> connectionId, IBinder windowToken)</span> </span>&#123;
+                mConnectionId = connectionId;
+                mWindowToken = windowToken;
+
+                <span class="hljs-comment">// The client may have already obtained the window manager, so</span>
+                <span class="hljs-comment">// update the default token on whatever manager we gave them.</span>
+                <span class="hljs-keyword">final</span> WindowManagerImpl wm = (WindowManagerImpl) getSystemService(WINDOW_SERVICE);
+                wm.setDefaultToken(windowToken);
+            &#125;
+
+       		......
+                
+        &#125;);
+    &#125;
+    
+    ......
+    
+&#125;</code></pre>
+
+<p>不难发现AccessibilityService的<code>onBind()</code>方法中返回类型为IAccessibilityServiceClientWrapper的对象,IAccessibilityServiceClientWrapper以内部类的形式存在于AccessibilityService中,其定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IAccessibilityServiceClientWrapper</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">IAccessibilityServiceClient</span>.<span class="hljs-title">Stub</span></span>
+<span class="hljs-class">           <span class="hljs-keyword">implements</span> <span class="hljs-title">HandlerCaller</span>.<span class="hljs-title">Callback</span> </span>&#123;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_INIT = <span class="hljs-number">1</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_INTERRUPT = <span class="hljs-number">2</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_ACCESSIBILITY_EVENT = <span class="hljs-number">3</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_GESTURE = <span class="hljs-number">4</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_CLEAR_ACCESSIBILITY_CACHE = <span class="hljs-number">5</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_KEY_EVENT = <span class="hljs-number">6</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_MAGNIFICATION_CHANGED = <span class="hljs-number">7</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_SOFT_KEYBOARD_SHOW_MODE_CHANGED = <span class="hljs-number">8</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_GESTURE_COMPLETE = <span class="hljs-number">9</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_FINGERPRINT_ACTIVE_CHANGED = <span class="hljs-number">10</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ON_FINGERPRINT_GESTURE = <span class="hljs-number">11</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ACCESSIBILITY_BUTTON_CLICKED = <span class="hljs-number">12</span>;
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DO_ACCESSIBILITY_BUTTON_AVAILABILITY_CHANGED = <span class="hljs-number">13</span>;
+
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> HandlerCaller mCaller;
+
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Callbacks mCallback;
+
+       <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> mConnectionId = AccessibilityInteractionClient.NO_ID;
+
+       <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">IAccessibilityServiceClientWrapper</span><span class="hljs-params">(Context context, Looper looper,</span></span>
+<span class="hljs-function"><span class="hljs-params">               Callbacks callback)</span> </span>&#123;
+           mCallback = callback;
+           mCaller = <span class="hljs-keyword">new</span> HandlerCaller(context, looper, <span class="hljs-keyword">this</span>, <span class="hljs-keyword">true</span> <span class="hljs-comment">/*asyncHandler*/</span>);
+       &#125;
+
+       <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">(IAccessibilityServiceConnection connection, <span class="hljs-keyword">int</span> connectionId,</span></span>
+<span class="hljs-function"><span class="hljs-params">               IBinder windowToken)</span> </span>&#123;
+           Message message = mCaller.obtainMessageIOO(DO_INIT, connectionId,
+                   connection, windowToken);
+           mCaller.sendMessage(message);
+       &#125;
+
+       <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onInterrupt</span><span class="hljs-params">()</span> </span>&#123;
+           Message message = mCaller.obtainMessage(DO_ON_INTERRUPT);
+           mCaller.sendMessage(message);
+       &#125;
+
+       <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event, <span class="hljs-keyword">boolean</span> serviceWantsEvent)</span> </span>&#123;
+           Message message = mCaller.obtainMessageBO(
+                   DO_ON_ACCESSIBILITY_EVENT, serviceWantsEvent, event);
+           mCaller.sendMessage(message);
+       &#125;
+
+	.......
+	
+&#125;</code></pre>
+
+<p>IAccessibilityServiceClientWrapper继承自IAccessibilityServiceClient.Stub,而IAccessibilityServiceClient用来代表AccessibilityService组件.在IAccessibilityServiceClient接口中定义了暴露给AMS可操作的方法:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">IAccessibilityServiceClient</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">android</span>.<span class="hljs-title">os</span>.<span class="hljs-title">IInterface</span> </span>&#123;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Stub</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">android</span>.<span class="hljs-title">os</span>.<span class="hljs-title">Binder</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">android</span>.<span class="hljs-title">accessibilityservice</span>.<span class="hljs-title">IAccessibilityServiceClient</span> </span>&#123;
+        ......
+            
+         <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Proxy</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">android</span>.<span class="hljs-title">accessibilityservice</span>.<span class="hljs-title">IAccessibilityServiceClient</span> </span>&#123;
+         &#125;
+        
+        ......
+    &#125;
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">(android.accessibilityservice.IAccessibilityServiceConnection connection, <span class="hljs-keyword">int</span> connectionId, android.os.IBinder windowToken)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityEvent</span><span class="hljs-params">(android.view.accessibility.AccessibilityEvent event, <span class="hljs-keyword">boolean</span> serviceWantsEvent)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onInterrupt</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onGesture</span><span class="hljs-params">(<span class="hljs-keyword">int</span> gesture)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">clearAccessibilityCache</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onKeyEvent</span><span class="hljs-params">(android.view.KeyEvent event, <span class="hljs-keyword">int</span> sequence)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMagnificationChanged</span><span class="hljs-params">(android.graphics.Region region, <span class="hljs-keyword">float</span> scale, <span class="hljs-keyword">float</span> centerX, <span class="hljs-keyword">float</span> centerY)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onSoftKeyboardShowModeChanged</span><span class="hljs-params">(<span class="hljs-keyword">int</span> showMode)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onPerformGestureResult</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sequence, <span class="hljs-keyword">boolean</span> completedSuccessfully)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onFingerprintCapturingGesturesChanged</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> capturing)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onFingerprintGesture</span><span class="hljs-params">(<span class="hljs-keyword">int</span> gesture)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityButtonClicked</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityButtonAvailabilityChanged</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> available)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+
+&#125;</code></pre>
+
+<p>此外IAccessibilityServiceClientWrapper的构造函数中存在参数类型为Callbacks的回调接口.该回调接口最终会被AMS调用,其定义如下:</p>
+<p>android.accessibilityservice.AccessibilityService.Callbacks</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Callbacks</span> </span>&#123;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onInterrupt</span><span class="hljs-params">()</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onServiceConnected</span><span class="hljs-params">()</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">(<span class="hljs-keyword">int</span> connectionId, IBinder windowToken)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">onGesture</span><span class="hljs-params">(<span class="hljs-keyword">int</span> gestureId)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">onKeyEvent</span><span class="hljs-params">(KeyEvent event)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onMagnificationChanged</span><span class="hljs-params">(@NonNull Region region,</span></span>
+<span class="hljs-function"><span class="hljs-params">            <span class="hljs-keyword">float</span> scale, <span class="hljs-keyword">float</span> centerX, <span class="hljs-keyword">float</span> centerY)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onSoftKeyboardShowModeChanged</span><span class="hljs-params">(<span class="hljs-keyword">int</span> showMode)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onPerformGestureResult</span><span class="hljs-params">(<span class="hljs-keyword">int</span> sequence, <span class="hljs-keyword">boolean</span> completedSuccessfully)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onFingerprintCapturingGesturesChanged</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> active)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onFingerprintGesture</span><span class="hljs-params">(<span class="hljs-keyword">int</span> gesture)</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityButtonClicked</span><span class="hljs-params">()</span></span>;
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityButtonAvailabilityChanged</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> available)</span></span>;
+&#125;</code></pre>
+
+<p>在AccessibilityService启用时,AMS会主动绑定该服务,并通过<code>onBind()</code>返回IAccessibilityServiceClientWrapper对象,当AMS需要与AccessibilityService通信时,就会回远程回调此处的Callbacks接口,以分发AccessibilityEvent到对应的AccessibilityService为例,此时AMS会远程回调Callbacks中的<code>onAccessibilityEvent()</code>:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">new</span> IAccessibilityServiceClientWrapper(<span class="hljs-keyword">this</span>, getMainLooper(), <span class="hljs-keyword">new</span> Callbacks() &#123;
+   
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+                <span class="hljs-comment">// 事件分发</span>
+                AccessibilityService.<span class="hljs-keyword">this</span>.onAccessibilityEvent(event);
+            &#125;
+    
+    		......
+&#125;</code></pre>
+
+<p>我们发现在Callbacks的匿名实现类中,最终又调用了AccessibilityService实例中的<code>onAccessibilityEvent(event)</code>,此方法是抽象类AccessibilityService中的抽象方法,也是我们在自定义AccessibilityService时必须要重写的方法:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AccessibilityService</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Service</span> </span>&#123;
+	......
+        
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event)</span></span>;
+    
+    .......
+&#125;</code></pre>
+
+
+
+<h2 id="AMS绑定AccessibilityService时机"><a href="#AMS绑定AccessibilityService时机" class="headerlink" title="AMS绑定AccessibilityService时机"></a>AMS绑定AccessibilityService时机</h2><p>和AMS启动时机一样,AccessibilityServiceManager也是由SystemServer启动,其构造函数如下:</p>
+<p>com.android.server.accessibility.AccessibilityManagerService#AccessibilityManagerService</p>
+<pre><code class="hljs java">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">AccessibilityManagerService</span><span class="hljs-params">(Context context)</span> </span>&#123;
+      mContext = context;
+      mPackageManager = mContext.getPackageManager();
+      mPowerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+      mWindowManagerService = LocalServices.getService(WindowManagerInternal<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;
+      mUserManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
+      mSecurityPolicy = <span class="hljs-keyword">new</span> SecurityPolicy();
+      mAppOpsManager = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+      mMainHandler = <span class="hljs-keyword">new</span> MainHandler(mContext.getMainLooper());
+      mGlobalActionPerformer = <span class="hljs-keyword">new</span> GlobalActionPerformer(mContext, mWindowManagerService);
+<span class="hljs-comment">// 动态注册广播接收器</span>
+      registerBroadcastReceivers();
+      <span class="hljs-keyword">new</span> AccessibilityContentObserver(mMainHandler).register(
+              context.getContentResolver());
+  &#125;</code></pre>
+
+<p>其中<code>registerBroadcastReceivers()</code>动态注册PackageMonitor类型的广播接收器.其中PackageMonitor用于监听app安装,删除,更新以及SD卡增加/移除的广播通知,然后根据这些广播通知,来决定什么时候要主动绑定某个AccessibilityService或者和某个AccessibilityService断开.比如当某个App从系统中被删除或者被强制停止时,会分别调用<code>onPackageRemoved()</code>和<code>onHandleForceStop()</code>方法,如下所示:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">registerBroadcastReceivers</span><span class="hljs-params">()</span> </span>&#123;
+        PackageMonitor monitor = <span class="hljs-keyword">new</span> PackageMonitor() &#123;
+            
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onSomePackagesChanged</span><span class="hljs-params">()</span> </span>&#123;
+                ......
+                onUserStateChangedLocked();
+                ......    
+            &#125;
+            
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onPackageRemoved</span><span class="hljs-params">(String packageName, <span class="hljs-keyword">int</span> uid)</span> </span>&#123;
+                ......
+                onUserStateChangedLocked();
+                ......
+            &#125;
+            
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">onHandleForceStop</span><span class="hljs-params">(Intent intent, String[] packages,<span class="hljs-keyword">int</span> uid, <span class="hljs-keyword">boolean</span> doit)</span> </span>&#123;
+               ......
+                onUserStateChangedLocked();
+               ......  
+            &#125;
+            
+            ......
+        &#125;</code></pre>
+
+<p>通过上述代码不难看出AccessibilityManagerService通过监听系统状态变化的广播,并决定是否调用<code>onUserStateChangedLocked()</code>来更新状态,更新的时机主要涉及以下场景:</p>
+<ul>
+<li>用户在系统设置界面,为某个APP开启辅助服务的时候</li>
+<li>用户在系统设置界面,关闭某个APP辅助功能</li>
+<li>接受到用户删除APP事件的时候</li>
+<li>接受到某个App被强制停止</li>
+</ul>
+<p>接下来来看看onUserStateChangedLocked()中到底做了什么:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onUserStateChangedLocked</span><span class="hljs-params">(UserState userState)</span> </span>&#123;
+       <span class="hljs-comment">// <span class="hljs-doctag">TODO:</span> Remove this hack</span>
+       mInitialized = <span class="hljs-keyword">true</span>;
+       updateLegacyCapabilitiesLocked(userState);
+       updateServicesLocked(userState);
+       updateAccessibilityShortcutLocked(userState);
+       updateWindowsForAccessibilityCallbackLocked(userState);
+       updateAccessibilityFocusBehaviorLocked(userState);
+       updateFilterKeyEventsLocked(userState);
+       updateTouchExplorationLocked(userState);
+       updatePerformGesturesLocked(userState);
+       updateDisplayDaltonizerLocked(userState);
+       updateDisplayInversionLocked(userState);
+       updateMagnificationLocked(userState);
+       updateSoftKeyboardShowModeLocked(userState);
+       scheduleUpdateFingerprintGestureHandling(userState);
+       scheduleUpdateInputFilter(userState);
+       scheduleUpdateClientsIfNeededLocked(userState);
+       updateRelevantEventsLocked(userState);
+       updateAccessibilityButtonTargetsLocked(userState);
+   &#125;</code></pre>
+
+<p>上述代码中会调用很多状态更新的方法,但我们目前只关心AMS什么时候主动绑定AccessibilityService.因此先看方法<code>updateServicesLocked()</code>:</p>
+<pre><code class="hljs java">   <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">updateServicesLocked</span><span class="hljs-params">(UserState userState)</span> </span>&#123;
+      Map&lt;ComponentName, AccessibilityServiceConnection&gt; componentNameToServiceMap =
+              userState.mComponentNameToServiceMap;
+      <span class="hljs-keyword">boolean</span> isUnlockingOrUnlocked = LocalServices.getService(UserManagerInternal<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>
+<span class="hljs-class">                  .<span class="hljs-title">isUserUnlockingOrUnlocked</span>(<span class="hljs-title">userState</span>.<span class="hljs-title">mUserId</span>)</span>;
+<span class="hljs-comment">// mInstalledServices表示手机中所有已经安装的AccessibilityService,</span>
+      <span class="hljs-comment">// 每个AccessibilityService用AccessibilityServiceInfo表示</span>
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>, count = userState.mInstalledServices.size(); i &lt; count; i++) &#123;
+          AccessibilityServiceInfo installedService = userState.mInstalledServices.get(i);
+          ComponentName componentName = ComponentName.unflattenFromString(
+                  installedService.getId());
+
+          AccessibilityServiceConnection service = componentNameToServiceMap.get(componentName);
+
+          <span class="hljs-comment">// Ignore non-encryption-aware services until user is unlocked</span>
+          <span class="hljs-keyword">if</span> (!isUnlockingOrUnlocked &amp;&amp; !installedService.isDirectBootAware()) &#123;
+              Slog.d(LOG_TAG, <span class="hljs-string">"Ignoring non-encryption-aware service "</span> + componentName);
+              <span class="hljs-keyword">continue</span>;
+          &#125;
+
+          <span class="hljs-comment">// Wait for the binding if it is in process.</span>
+          <span class="hljs-keyword">if</span> (userState.mBindingServices.contains(componentName)) &#123;
+              <span class="hljs-keyword">continue</span>;
+          &#125;
+          <span class="hljs-keyword">if</span> (userState.mEnabledServices.contains(componentName)
+                  &amp;&amp; !mUiAutomationManager.suppressingAccessibilityServicesLocked()) &#123;
+              <span class="hljs-comment">// 当前AccessibilityService被启用后,为其创建连接对象</span>
+              <span class="hljs-comment">// AccessibilityServiceConnection</span>
+              <span class="hljs-keyword">if</span> (service == <span class="hljs-keyword">null</span>) &#123;
+                  service = <span class="hljs-keyword">new</span> AccessibilityServiceConnection(userState, mContext, componentName,
+                          installedService, sIdCounter++, mMainHandler, mLock, mSecurityPolicy,
+                          <span class="hljs-keyword">this</span>, mWindowManagerService, mGlobalActionPerformer);
+              &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (userState.mBoundServices.contains(service)) &#123;
+                  <span class="hljs-keyword">continue</span>;
+              &#125;
+              <span class="hljs-comment">// 调用AccessibilityServiceConnection的bindLocked()方法主动连接</span>
+              <span class="hljs-comment">// AccessibilityService</span>
+              service.bindLocked();
+          &#125; <span class="hljs-keyword">else</span> &#123;
+              <span class="hljs-keyword">if</span> (service != <span class="hljs-keyword">null</span>) &#123;
+                  service.unbindLocked();
+              &#125;
+          &#125;
+      &#125;
+
+      <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> count = userState.mBoundServices.size();
+      mTempIntArray.clear();
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; count; i++) &#123;
+          <span class="hljs-keyword">final</span> ResolveInfo resolveInfo =
+                  userState.mBoundServices.get(i).mAccessibilityServiceInfo.getResolveInfo();
+          <span class="hljs-keyword">if</span> (resolveInfo != <span class="hljs-keyword">null</span>) &#123;
+              mTempIntArray.add(resolveInfo.serviceInfo.applicationInfo.uid);
+          &#125;
+      &#125;
+      <span class="hljs-comment">// Calling out with lock held, but to a lower-level service</span>
+      <span class="hljs-keyword">final</span> AudioManagerInternal audioManager =
+              LocalServices.getService(AudioManagerInternal<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;
+      <span class="hljs-keyword">if</span> (audioManager != <span class="hljs-keyword">null</span>) &#123;
+          audioManager.setAccessibilityServiceUids(mTempIntArray);
+      &#125;
+      updateAccessibilityEnabledSetting(userState);
+  &#125;</code></pre>
+
+<p>这里面主要做了三件事情:</p>
+<ol>
+<li>遍历手机中所有已安装的辅助服务,这些服务信息被保存在<code>UserState.mInstalledServices</code>中;</li>
+<li>根据componentName,在<code>mEnabledServices</code>(mEnableServices保存了所有启动的辅助服务,即AMS绑定过的AccessibilityService)里面查找enabled状态的AccessibilityService组件,如果不存在就构造一个service.这里service类型是AccessibilityServiceConnection,在AMS中,用AccessibilityServiceConnection表示AMS和某个AccessibilityService的连接.</li>
+<li>调用service的bindLocked方法来进行真正的绑定操作</li>
+</ol>
+<p>其实componentName里面保存的就是AccessibilityService的packageName和className.重点来看service的<code>bindLocked()</code>操作:</p>
+<p>com.android.server.accessibility.AccessibilityServiceConnection#bindLocked</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">bindLocked</span><span class="hljs-params">()</span> </span>&#123;
+    UserState userState = mUserStateWeakReference.get();
+    <span class="hljs-keyword">if</span> (userState == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">return</span>;
+    <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> identity = Binder.clearCallingIdentity();
+    <span class="hljs-keyword">try</span> &#123;
+        <span class="hljs-keyword">int</span> flags = Context.BIND_AUTO_CREATE | Context.BIND_FOREGROUND_SERVICE_WHILE_AWAKE;
+        <span class="hljs-keyword">if</span> (userState.mBindInstantServiceAllowed) &#123;
+            flags |= Context.BIND_ALLOW_INSTANT;
+        &#125;
+        <span class="hljs-comment">// 调用bindServiceAsUser()来绑定服务,其中第二个参数this类型是ServiceConnection</span>
+        <span class="hljs-keyword">if</span> (mService == <span class="hljs-keyword">null</span> &amp;&amp; mContext.bindServiceAsUser(
+                mIntent, <span class="hljs-keyword">this</span>, flags, <span class="hljs-keyword">new</span> UserHandle(userState.mUserId))) &#123;
+            userState.getBindingServicesLocked().add(mComponentName);
+        &#125;
+    &#125; <span class="hljs-keyword">finally</span> &#123;
+        Binder.restoreCallingIdentity(identity);
+    &#125;
+    
+    
+&#125;</code></pre>
+
+<p>上述代码中最终调用<code>bindServiceAsUser()</code>来绑定AccessibilityService.绑定成功后回调ServiceConnection中的<code>onServiceConnected()</code>,即AccessibilityServiceConnection中的<code>onServiceConnected()</code>:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onServiceConnected</span><span class="hljs-params">(ComponentName componentName, IBinder service)</span> </span>&#123;
+    <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+        <span class="hljs-comment">// 此处service即AccessibilityService中onBind()方法返回的</span>
+        <span class="hljs-comment">// IAccessibilityServiceClientWrapper对象</span>
+        <span class="hljs-keyword">if</span> (mService != service) &#123;
+            <span class="hljs-keyword">if</span> (mService != <span class="hljs-keyword">null</span>) &#123;
+                mService.unlinkToDeath(<span class="hljs-keyword">this</span>, <span class="hljs-number">0</span>);
+            &#125;
+            mService = service;
+            <span class="hljs-keyword">try</span> &#123;
+                mService.linkToDeath(<span class="hljs-keyword">this</span>, <span class="hljs-number">0</span>);
+            &#125; <span class="hljs-keyword">catch</span> (RemoteException re) &#123;
+                Slog.e(LOG_TAG, <span class="hljs-string">"Failed registering death link"</span>);
+                binderDied();
+                <span class="hljs-keyword">return</span>;
+            &#125;
+        &#125;
+        <span class="hljs-comment">// mServiceInterface是AccessibilityServiceConnection类型</span>
+        mServiceInterface = IAccessibilityServiceClient.Stub.asInterface(service);
+        UserState userState = mUserStateWeakReference.get();
+        <span class="hljs-keyword">if</span> (userState == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">return</span>;
+        <span class="hljs-comment">// 调用AMS的addServiceLocked()方法将该Connection实例保存在mBoundServices</span>
+        <span class="hljs-comment">// 成员变量中</span>
+        userState.addServiceLocked(<span class="hljs-keyword">this</span>);
+        mSystemSupport.onClientChange(<span class="hljs-keyword">false</span>);
+        <span class="hljs-comment">// Initialize the service on the main handler after we're done setting up for</span>
+        <span class="hljs-comment">// the new configuration (for example, initializing the input filter).</span>
+        <span class="hljs-comment">// 主线程继续调用initializeService()方法来继续完成初始化操作</span>
+        mMainHandler.sendMessage(obtainMessage(
+                AccessibilityServiceConnection::initializeService, <span class="hljs-keyword">this</span>));
+    &#125;
+&#125;</code></pre>
+
+<p>不难看出其实每个AccessibilityServiceConnection都关联了对应AccessibilityService中返回的IAccessibilityServiceClientWrapper对象,即上述代码中的mService.然后将该AccessibilityServiceConnection保存在AMS中对应UserState的mBoundServices中:</p>
+<p>com.android.server.accessibility.AccessibilityManagerService.UserState#addServiceLocked</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">UserState</span> </span>&#123;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> ArrayList&lt;AccessibilityServiceConnection&gt; mBoundServices = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">addServiceLocked</span><span class="hljs-params">(AccessibilityServiceConnection serviceConnection)</span> </span>&#123;
+         <span class="hljs-keyword">if</span> (!mBoundServices.contains(serviceConnection)) &#123;
+              serviceConnection.onAdded();
+              mBoundServices.add(serviceConnection);
+              mComponentNameToServiceMap.put(serviceConnection.mComponentName, serviceConnection);
+              scheduleNotifyClientsOfServicesStateChange(<span class="hljs-keyword">this</span>);
+          &#125;
+      &#125;
+    
+    ......
+&#125;</code></pre>
+
+<p>接下来继续调用<code>initializeService()</code>来完成初始化操作:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initializeService</span><span class="hljs-params">()</span> </span>&#123;
+    IAccessibilityServiceClient serviceInterface = <span class="hljs-keyword">null</span>;
+    <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+        UserState userState = mUserStateWeakReference.get();
+        <span class="hljs-keyword">if</span> (userState == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">return</span>;
+        Set&lt;ComponentName&gt; bindingServices = userState.getBindingServicesLocked();
+        <span class="hljs-keyword">if</span> (bindingServices.contains(mComponentName) || mWasConnectedAndDied) &#123;
+            bindingServices.remove(mComponentName);
+            mWasConnectedAndDied = <span class="hljs-keyword">false</span>;
+            serviceInterface = mServiceInterface;
+        &#125;
+    &#125;
+    <span class="hljs-keyword">if</span> (serviceInterface == <span class="hljs-keyword">null</span>) &#123;
+        binderDied();
+        <span class="hljs-keyword">return</span>;
+    &#125;
+    <span class="hljs-keyword">try</span> &#123;
+        <span class="hljs-comment">// 远程调用IAccessibilityServiceClient的init()方法以便AccessibilityService所在</span>
+        <span class="hljs-comment">// 进程能够持有当前AccessibilityServiceConnection的代理对象</span>
+        serviceInterface.init(<span class="hljs-keyword">this</span>, mId, mOverlayWindowToken);
+    &#125; <span class="hljs-keyword">catch</span> (RemoteException re) &#123;
+        Slog.w(LOG_TAG, <span class="hljs-string">"Error while setting connection for service: "</span>
+                + serviceInterface, re);
+        binderDied();
+    &#125;
+&#125;</code></pre>
+
+<p>最终初始化完成后,在AMS进程一端,AMS持有远程AccessibilityService中IAccessibilityServiceClientWrapper的本地代理对象,在AMS需要和AccessibilityService通信时,就会远程回调IAccessibilityServiceClientWrapper中Callbacks接口;此外AccessibilityService也持有了AMS端中对应AccessibilityServiceConnection的本地代理对象,在AccessibilityService需要和AMS通信时便会借助该代理对象.</p>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1fyjefsx7hlj31f00kgjt8.jpg" srcset="/img/loading.gif" alt="image-20181225231722678"></p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>当AMS监听到一些系统状态变化时,最终会调用<code>onUserStateChangedLocked()</code>进行用户状态更新操作.在此期间会根据componentName,在mEnabledServices里面查找enabled状态的AccessibilityService组件,并为其生成对应AccessibilityServiceConnection对象,然后调用该对象的<code>bindLocked()</code>方法,在<code>bindLocked()</code>中会调用context的<code>bindServiceAsUser(mIntent...)</code>来绑定AccessibilityService.</p>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1fykhsbwuf4j31ko0u0qi4.jpg" srcset="/img/loading.gif" alt="image-20181226215836704"></p>
+<h1 id="AccessibilityEvent分发"><a href="#AccessibilityEvent分发" class="headerlink" title="AccessibilityEvent分发"></a>AccessibilityEvent分发</h1><p>AccessibilityEvent代表将可能系统中产生的事件,该事件对象产生后会通过跨进程的方式传送给AMS,然后AMS继续通过跨进程的方式传递给对应AccessibilityService进程.</p>
+<h2 id="AccessibilityEvent生成及初始化"><a href="#AccessibilityEvent生成及初始化" class="headerlink" title="AccessibilityEvent生成及初始化"></a>AccessibilityEvent生成及初始化</h2><p>当一个View想要对外发送AccessibilityEvent时,需要用到以下接口:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">AccessibilityEventSource</span> </span>&#123;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEvent</span><span class="hljs-params">(<span class="hljs-keyword">int</span> eventType)</span></span>;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEventUnchecked</span><span class="hljs-params">(AccessibilityEvent event)</span></span>;
+&#125;</code></pre>
+
+<p>该接口中定义了两个方法用来发送AccessibilityEvent.Android官方希望任何一个View在开始设计时都能对残疾人友好,因此选择在View来实现该接口,这样我们在View及其子类就可以方便的支持无障碍服务了.首先来看View中关于点击操作所发出的事件的流程,即<code>performClick()</code>:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">View</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Drawable</span>.<span class="hljs-title">Callback</span>, <span class="hljs-title">KeyEvent</span>.<span class="hljs-title">Callback</span>,</span>
+<span class="hljs-class">        <span class="hljs-title">AccessibilityEventSource</span> </span>&#123;
+
+    AccessibilityDelegate mAccessibilityDelegate;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">performClick</span><span class="hljs-params">()</span> </span>&#123;
+        <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> result;
+        <span class="hljs-keyword">final</span> ListenerInfo li = mListenerInfo;
+        <span class="hljs-comment">// 1.设置ClickListener的情况,先回调onClick()</span>
+        <span class="hljs-keyword">if</span> (li != <span class="hljs-keyword">null</span> &amp;&amp; li.mOnClickListener != <span class="hljs-keyword">null</span>) &#123;
+            playSoundEffect(SoundEffectConstants.CLICK);
+            li.mOnClickListener.onClick(<span class="hljs-keyword">this</span>);
+            result = <span class="hljs-keyword">true</span>;
+        &#125; <span class="hljs-keyword">else</span> &#123;
+            result = <span class="hljs-keyword">false</span>;
+        &#125;
+		
+        <span class="hljs-comment">// 2.向辅助服务发送CLICKED事件</span>
+        sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
+        notifyEnterOrExitForAutoFillIfNeeded(<span class="hljs-keyword">true</span>);
+        <span class="hljs-keyword">return</span> result;
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEvent</span><span class="hljs-params">(<span class="hljs-keyword">int</span> eventType)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (mAccessibilityDelegate != <span class="hljs-keyword">null</span>) &#123;
+            <span class="hljs-comment">// 如果已经设置了委托,则调用委托者的sendAccessibilityEvent()</span>
+            mAccessibilityDelegate.sendAccessibilityEvent(<span class="hljs-keyword">this</span>, eventType);
+        &#125; <span class="hljs-keyword">else</span> &#123;
+            <span class="hljs-comment">// 没有设置委托的情况下,调用sendAccessibilityEventInternal()</span>
+            sendAccessibilityEventInternal(eventType);
+        &#125;
+    &#125;
+            
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEventInternal</span><span class="hljs-params">(<span class="hljs-keyword">int</span> eventType)</span></span>&#123;
+        <span class="hljs-comment">// isEnabled()用来检查系统辅助功能是否开启</span>
+        <span class="hljs-keyword">if</span>(AccessibilityManager.getInstance(mContext).isEnabled())&#123;
+            <span class="hljs-comment">// 继续调用sendAccessibilityEventUnchecked()实现事件发送</span>
+            sendAccessibilityEventUnchecked(AccessibilityEvent.obtain(eventType))
+        &#125;       
+    &#125;
+            
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEventUnchecked</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+        <span class="hljs-comment">// 如果已经设置了委托,则调用委托者的sendAccessibilityEventUnchecked()</span>
+        <span class="hljs-keyword">if</span> (mAccessibilityDelegate != <span class="hljs-keyword">null</span>) &#123;
+            mAccessibilityDelegate.sendAccessibilityEventUnchecked(<span class="hljs-keyword">this</span>, event);
+        &#125; <span class="hljs-keyword">else</span> &#123;
+            <span class="hljs-comment">// 继续调用sendAccessibilityEventUncheckedInternal()实现事件发送</span>
+            sendAccessibilityEventUncheckedInternal(event);
+        &#125;
+    &#125;
+                      
+            
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEventUncheckedInternal</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+        <span class="hljs-comment">// 1.isShown()用递归检查当前view以及其父view是否可见.如果不可见了就没必要继续处理了</span>
+        <span class="hljs-keyword">if</span> (!isShown()) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+        <span class="hljs-comment">// 2.使用有关View的事件源的信息初始化AccessibilityEvent对象</span>
+        onInitializeAccessibilityEvent(event);
+        <span class="hljs-comment">// Only a subset of accessibility events populates text content.</span>
+        <span class="hljs-keyword">if</span> ((event.getEventType() &amp; POPULATING_ACCESSIBILITY_EVENT_TYPES) != <span class="hljs-number">0</span>) &#123;
+            dispatchPopulateAccessibilityEvent(event);
+        &#125;
+		<span class="hljs-comment">// ViewRootImpl是ViewParent的实现类</span>
+        ViewParent parent = getParent();
+        <span class="hljs-keyword">if</span> (parent != <span class="hljs-keyword">null</span>) &#123;
+            <span class="hljs-comment">// 3. 请求父View发送AccessibilityEvent,这里最终调用了ViewRootImpl的</span>
+            <span class="hljs-comment">// requestSendAccessibilityEvent()方法</span>
+            getParent().requestSendAccessibilityEvent(<span class="hljs-keyword">this</span>, event);
+        &#125;
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setAccessibilityDelegate</span><span class="hljs-params">(@Nullable AccessibilityDelegate delegate)</span> </span>&#123;
+        mAccessibilityDelegate = delegate;
+    &#125;
+&#125;</code></pre>
+
+<p>在上述代码中主要做了两件事:</p>
+<ul>
+<li>事件生成: 指定要发送的AccessibilityEvent类型,并生成对应的AccessibilityEvent事件</li>
+<li>事件发送: 在没有设置委托的情况下,最终调用<code>ViewRootImpl#requestSendAccessibilityEvent()</code>请求发送事件</li>
+</ul>
+<h3 id="事件生成"><a href="#事件生成" class="headerlink" title="事件生成"></a>事件生成</h3><p>由于系统中会产生大量的事件,如果为每个事件都创建对应AccessibilityEvent对象可能会造成GC频繁发生,进而影响整体性能,因此Google采用享元模式来实现对AccessibilityEvent对象的复用.</p>
+<p>AccessibilityEvent.obtain()根据事件类型返回一个缓存的AccessibilityEvent实例,享元模式.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AccessibilityEvent</span></span>&#123;
+    
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> MAX_POOL_SIZE = <span class="hljs-number">10</span>;
+    <span class="hljs-comment">//sPool是对象池</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> SynchronizedPool&lt;AccessibilityEvent&gt; sPool =
+            <span class="hljs-keyword">new</span> SynchronizedPool&lt;AccessibilityEvent&gt;(MAX_POOL_SIZE);
+    
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> AccessibilityEvent <span class="hljs-title">obtain</span><span class="hljs-params">(<span class="hljs-keyword">int</span> eventType)</span> </span>&#123;
+        AccessibilityEvent event = AccessibilityEvent.obtain();
+        event.setEventType(eventType);
+        <span class="hljs-keyword">return</span> event;
+    &#125;
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> AccessibilityEvent <span class="hljs-title">obtain</span><span class="hljs-params">()</span> </span>&#123;
+        AccessibilityEvent event = sPool.acquire();
+        <span class="hljs-keyword">return</span> (event != <span class="hljs-keyword">null</span>) ? event : <span class="hljs-keyword">new</span> AccessibilityEvent();
+    &#125;
+    
+&#125;</code></pre>
+
+<h3 id="事件初始化"><a href="#事件初始化" class="headerlink" title="事件初始化"></a>事件初始化</h3><p>在获取AccessibilityEvent对象之后接下来会用当前事件源的信息对AccessiblityEvent对象进行初始化操作.在没有设置mAccessibilityDelegate的情况下默认通过View.onInitializeAccessibilityEventInternal()进行初始化:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onInitializeAccessibilityEventInternal</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+        <span class="hljs-comment">// 1.设置当前View为事件源</span>
+        event.setSource(<span class="hljs-keyword">this</span>);
+        <span class="hljs-comment">// 2.将产生该事件所在类的类名设置为AccessibilityEvent的mClassName.View的子类中通过</span>
+    	<span class="hljs-comment">// 复写getAccessibilityClassName()来返回事件类的类名</span>
+        event.setClassName(getAccessibilityClassName());
+        <span class="hljs-comment">// 3.该事件是由那个应用产生的</span>
+        event.setPackageName(getContext().getPackageName());
+    	<span class="hljs-comment">// 4.产生该事件的View是否在可用状态</span>
+        event.setEnabled(isEnabled());
+    	<span class="hljs-comment">// 5.该View对应的内容概要信息,可以通过android:contentDescription来设置</span>
+        event.setContentDescription(mContentDescription);
+
+        <span class="hljs-keyword">switch</span> (event.getEventType()) &#123;
+            <span class="hljs-keyword">case</span> AccessibilityEvent.TYPE_VIEW_FOCUSED: &#123;
+                ArrayList&lt;View&gt; focusablesTempList = (mAttachInfo != <span class="hljs-keyword">null</span>)
+                        ? mAttachInfo.mTempArrayList : <span class="hljs-keyword">new</span> ArrayList&lt;View&gt;();
+                getRootView().addFocusables(focusablesTempList, View.FOCUS_FORWARD, FOCUSABLES_ALL);
+                event.setItemCount(focusablesTempList.size());
+                event.setCurrentItemIndex(focusablesTempList.indexOf(<span class="hljs-keyword">this</span>));
+                <span class="hljs-keyword">if</span> (mAttachInfo != <span class="hljs-keyword">null</span>) &#123;
+                    focusablesTempList.clear();
+                &#125;
+            &#125; <span class="hljs-keyword">break</span>;
+            <span class="hljs-keyword">case</span> AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED: &#123;
+                CharSequence text = getIterableTextForAccessibility();
+                <span class="hljs-keyword">if</span> (text != <span class="hljs-keyword">null</span> &amp;&amp; text.length() &gt; <span class="hljs-number">0</span>) &#123;
+                    <span class="hljs-comment">//设置选中字符的开始位置</span>
+                    event.setFromIndex(getAccessibilitySelectionStart());
+                    <span class="hljs-comment">//设置选中字符的结束位置</span>
+                    event.setToIndex(getAccessibilitySelectionEnd());
+                    <span class="hljs-comment">//设置选中字符的长度,为什么不把选中的文字设置过来呢?</span>
+                    event.setItemCount(text.length());
+                &#125;
+            &#125; <span class="hljs-keyword">break</span>;
+        &#125;
+    &#125;</code></pre>
+
+<p>上面的代码在View中对AccessibilityEvent对象的一些公共属性进行初始化,在View的子类可以重写此方法以便根据不同View组件来添加更多的信息.比如在TextView重写了此方法,进一步添加了事件的信息:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TextView</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">View</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ViewTreeObserver</span>.<span class="hljs-title">onPreDrawListener</span></span>&#123;
+    
+     <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onInitializeAccessibilityEventInternal</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+        <span class="hljs-keyword">super</span>.onInitializeAccessibilityEventInternal(event);
+
+        <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> isPassword = hasPasswordTransformationMethod();
+        event.setPassword(isPassword);
+
+        <span class="hljs-keyword">if</span> (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) &#123;
+            event.setFromIndex(Selection.getSelectionStart(mText));
+            event.setToIndex(Selection.getSelectionEnd(mText));
+            event.setItemCount(mText.length());
+        &#125;
+    &#125;
+    
+    
+&#125;</code></pre>
+
+<h2 id="AccessibilityEvent发送到AMS"><a href="#AccessibilityEvent发送到AMS" class="headerlink" title="AccessibilityEvent发送到AMS"></a>AccessibilityEvent发送到AMS</h2><p>将AccessibilityEvent发送给AMS的具体操作最终由<code>ViewRootImpl#requestSendAccessibilityEvent</code>完成,具体流程如下:</p>
+<pre><code class="hljs java"><span class="hljs-meta">@Override</span>
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">requestSendAccessibilityEvent</span><span class="hljs-params">(View child, AccessibilityEvent event)</span> </span>&#123;
+     <span class="hljs-keyword">if</span> (mView == <span class="hljs-keyword">null</span> || mStopped || mPausedForTransition) &#123;
+         <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+     &#125;
+
+     <span class="hljs-comment">// Immediately flush pending content changed event (if any) to preserve event order</span>
+     <span class="hljs-keyword">if</span> (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+             &amp;&amp; mSendWindowContentChangedAccessibilityEvent != <span class="hljs-keyword">null</span>
+             &amp;&amp; mSendWindowContentChangedAccessibilityEvent.mSource != <span class="hljs-keyword">null</span>) &#123;
+         mSendWindowContentChangedAccessibilityEvent.removeCallbacksAndRun();
+     &#125;
+
+     <span class="hljs-comment">// Intercept accessibility focus events fired by virtual nodes to keep</span>
+     <span class="hljs-comment">// track of accessibility focus position in such nodes.</span>
+     <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> eventType = event.getEventType();
+     <span class="hljs-keyword">switch</span> (eventType) &#123;
+         <span class="hljs-keyword">case</span> AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED: &#123;
+             <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> sourceNodeId = event.getSourceNodeId();
+             <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> accessibilityViewId = AccessibilityNodeInfo.getAccessibilityViewId(
+                     sourceNodeId);
+             View source = mView.findViewByAccessibilityId(accessibilityViewId);
+             <span class="hljs-keyword">if</span> (source != <span class="hljs-keyword">null</span>) &#123;
+                 AccessibilityNodeProvider provider = source.getAccessibilityNodeProvider();
+                 <span class="hljs-keyword">if</span> (provider != <span class="hljs-keyword">null</span>) &#123;
+                     <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> virtualNodeId = AccessibilityNodeInfo.getVirtualDescendantId(
+                             sourceNodeId);
+                     <span class="hljs-keyword">final</span> AccessibilityNodeInfo node;
+                     node = provider.createAccessibilityNodeInfo(virtualNodeId);
+                     setAccessibilityFocus(source, node);
+                 &#125;
+             &#125;
+         &#125; <span class="hljs-keyword">break</span>;
+         <span class="hljs-keyword">case</span> AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED: &#123;
+             <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> sourceNodeId = event.getSourceNodeId();
+             <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> accessibilityViewId = AccessibilityNodeInfo.getAccessibilityViewId(
+                     sourceNodeId);
+             View source = mView.findViewByAccessibilityId(accessibilityViewId);
+             <span class="hljs-keyword">if</span> (source != <span class="hljs-keyword">null</span>) &#123;
+                 AccessibilityNodeProvider provider = source.getAccessibilityNodeProvider();
+                 <span class="hljs-keyword">if</span> (provider != <span class="hljs-keyword">null</span>) &#123;
+                     setAccessibilityFocus(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>);
+                 &#125;
+             &#125;
+         &#125; <span class="hljs-keyword">break</span>;
+
+
+         <span class="hljs-keyword">case</span> AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED: &#123;
+             handleWindowContentChangedEvent(event);
+         &#125; <span class="hljs-keyword">break</span>;
+     &#125;
+     <span class="hljs-comment">// mAccessibilityManager是AccessibilityManager类型实例,最终调用</span>
+     <span class="hljs-comment">// AccessibilityManager实例的sendAccessibilityEvent()来发送事件</span>
+     mAccessibilityManager.sendAccessibilityEvent(event);
+     <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+ &#125;</code></pre>
+
+<p>在上述方法中首先对一些特殊类型的事件做了处理,最后调用AccessibilityManager实例的<code>sendAccessibilityEvent()</code>来向AccessibilityManagerService发送事件.</p>
+<h3 id="AccessibilityManager创建"><a href="#AccessibilityManager创建" class="headerlink" title="AccessibilityManager创建"></a>AccessibilityManager创建</h3><p>AccessibilityManager以单例的形式存在,在其构造函数中会尝试连接AMS服务,即AccessibilityManagerService.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AccessibilityManager</span> </span>&#123;
+    <span class="hljs-keyword">final</span> Handler.Callback mCallback;
+    <span class="hljs-keyword">final</span> Handler mHandler;
+    
+    ...
+    
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> AccessibilityManager <span class="hljs-title">getInstance</span><span class="hljs-params">(Context context)</span> </span>&#123;
+        <span class="hljs-keyword">synchronized</span> (sInstanceSync) &#123;
+            <span class="hljs-keyword">if</span> (sInstance == <span class="hljs-keyword">null</span>) &#123;
+                <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> userId;
+                ......
+                sInstance = <span class="hljs-keyword">new</span> AccessibilityManager(context, <span class="hljs-keyword">null</span>, userId);
+            &#125;
+        &#125;
+        <span class="hljs-keyword">return</span> sInstance;
+    &#125;
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">AccessibilityManager</span><span class="hljs-params">(Context context, IAccessibilityManager service, <span class="hljs-keyword">int</span> userId)</span> </span>&#123;
+        mCallback = <span class="hljs-keyword">new</span> MyCallback();
+        mHandler = <span class="hljs-keyword">new</span> Handler(context.getMainLooper(), mCallback);
+        mUserId = userId;
+        <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+            <span class="hljs-comment">// 尝试连接到AMS服务</span>
+            tryConnectToServiceLocked(service);
+        &#125;
+    &#125;
+    
+&#125;</code></pre>
+
+<p>在AccessibilityManager的构造函数中,最终的的是通过<code>tryConnectToServiceLocked()</code>方法来连接AMS:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">tryConnectToServiceLocked</span><span class="hljs-params">(IAccessibilityManager service)</span> </span>&#123;
+        <span class="hljs-keyword">if</span> (service == <span class="hljs-keyword">null</span>) &#123;
+            IBinder iBinder = ServiceManager.getService(Context.ACCESSIBILITY_SERVICE);
+            <span class="hljs-keyword">if</span> (iBinder == <span class="hljs-keyword">null</span>) &#123;
+                <span class="hljs-keyword">return</span>;
+            &#125;
+            service = IAccessibilityManager.Stub.asInterface(iBinder);
+        &#125;
+
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> userStateAndRelevantEvents = service.addClient(mClient, mUserId);
+            setStateLocked(IntPair.first(userStateAndRelevantEvents));
+            mRelevantEventTypes = IntPair.second(userStateAndRelevantEvents);
+            mService = service;
+        &#125; <span class="hljs-keyword">catch</span> (RemoteException re) &#123;
+            Log.e(LOG_TAG, <span class="hljs-string">"AccessibilityManagerService is dead"</span>, re);
+        &#125;
+    &#125;</code></pre>
+
+<p>上述代码中首先通过ServiceManager来获取AccessibilityManagerService在本地代理对象,即IAccessibilityManager实例,在IAccessibilityManager接口中暴露了AccessibilityManagerService对外提供的方法,这是典型Binder通信过程,在系统代码中涉及多进程通信的过程基本类似.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">IAccessibilityManager</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">android</span>.<span class="hljs-title">os</span>.<span class="hljs-title">IInterface</span> </span>&#123;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Stub</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">android</span>.<span class="hljs-title">os</span>.<span class="hljs-title">Binder</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">android</span>.<span class="hljs-title">view</span>.<span class="hljs-title">accessibility</span>.<span class="hljs-title">IAccessibilityManager</span> </span>&#123;
+        .......
+    &#125;
+    
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Proxy</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">android</span>.<span class="hljs-title">view</span>.<span class="hljs-title">accessibility</span>.<span class="hljs-title">IAccessibilityManager</span> </span>&#123;
+        .......
+            
+         <span class="hljs-meta">@Override</span>   
+         <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEvent</span><span class="hljs-params">(android.view.accessibility.AccessibilityEvent uiEvent, <span class="hljs-keyword">int</span> userId)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException </span>&#123;
+            .......
+        &#125;
+        
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">long</span> <span class="hljs-title">addClient</span><span class="hljs-params">(android.view.accessibility.IAccessibilityManagerClient client, <span class="hljs-keyword">int</span> userId)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException </span>&#123;
+            ......
+        &#125;
+      
+        .....
+        
+    &#125;
+&#125;</code></pre>
+
+<p>AccessibilityManager在获取AMS的本地代理对象IAccessibilityManager后,会继续调用IAccessibilityManager的<code>addClient()</code>方法来将mClient通过跨进程的方式传递到AccessibilityManagerService中.那mClient到底是什么呢?其定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AccessibilityManager</span> </span>&#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> IAccessibilityManagerClient.Stub mClient =
+            <span class="hljs-keyword">new</span> IAccessibilityManagerClient.Stub() &#123;
+            .......
+        &#125;
+&#125;</code></pre>
+
+<p>不难发现这里mClient同样是Binder对象.当AccessibilityManagerService需要通知客户端一些变化时会利用到它.</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">IAccessibilityManagerClient</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">android</span>.<span class="hljs-title">os</span>.<span class="hljs-title">IInterface</span> </span>&#123;
+    
+     <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Stub</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">android</span>.<span class="hljs-title">os</span>.<span class="hljs-title">Binder</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">android</span>.<span class="hljs-title">view</span>.<span class="hljs-title">accessibility</span>.<span class="hljs-title">IAccessibilityManagerClient</span> </span>&#123;
+       	<span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> TRANSACTION_setState = (android.os.IBinder.FIRST_CALL_TRANSACTION + <span class="hljs-number">0</span>);
+   		<span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> TRANSACTION_notifyServicesStateChanged = (android.os.IBinder.FIRST_CALL_TRANSACTION + <span class="hljs-number">1</span>);
+    	<span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> TRANSACTION_setRelevantEventTypes = (android.os.IBinder.FIRST_CALL_TRANSACTION + <span class="hljs-number">2</span>);
+         
+         ......
+             
+         <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Proxy</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">android</span>.<span class="hljs-title">view</span>.<span class="hljs-title">accessibility</span>.<span class="hljs-title">IAccessibilityManagerClient</span> </span>&#123;
+        	.......
+    	&#125;    
+     &#125;
+    
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setState</span><span class="hljs-params">(<span class="hljs-keyword">int</span> stateFlags)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">notifyServicesStateChanged</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setRelevantEventTypes</span><span class="hljs-params">(<span class="hljs-keyword">int</span> eventTypes)</span> <span class="hljs-keyword">throws</span> android.os.RemoteException</span>;
+&#125;</code></pre>
+
+<h3 id="AccessibilityManagerService-addClient"><a href="#AccessibilityManagerService-addClient" class="headerlink" title="AccessibilityManagerService#addClient"></a>AccessibilityManagerService#addClient</h3><p>现在回过头来看AMS中的<code>addClient()</code>中具体做了什么事?</p>
+<p>com.android.server.accessibility.AccessibilityManagerService#addClient</p>
+<pre><code class="hljs java"> <span class="hljs-meta">@Override</span>
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">long</span> <span class="hljs-title">addClient</span><span class="hljs-params">(IAccessibilityManagerClient callback, <span class="hljs-keyword">int</span> userId)</span> </span>&#123;
+     <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+         <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> resolvedUserId = mSecurityPolicy
+                 .resolveCallingUserIdEnforcingPermissionsLocked(userId);
+         UserState userState = getUserStateLocked(resolvedUserId);
+<span class="hljs-comment">// 对每个请求与AccessibilityManagerService通信的客户端创建Client对象</span>
+         Client client = <span class="hljs-keyword">new</span> Client(callback, Binder.getCallingUid(), userState);
+         <span class="hljs-keyword">if</span> (mSecurityPolicy.isCallerInteractingAcrossUsers(userId)) &#123;
+             mGlobalClients.register(callback, client);
+             <span class="hljs-keyword">return</span> IntPair.of(
+                     userState.getClientState(),
+                     client.mLastSentRelevantEventTypes);
+         &#125; <span class="hljs-keyword">else</span> &#123;
+             userState.mUserClients.register(callback, client);
+             <span class="hljs-keyword">return</span> IntPair.of(
+                     (resolvedUserId == mCurrentUserId) ? userState.getClientState() : <span class="hljs-number">0</span>,
+                     client.mLastSentRelevantEventTypes);
+         &#125;
+     &#125;
+ &#125;</code></pre>
+
+<p> 对于每个客户端而言,即从AccessibilityManager传来的mClient对象,也就是该方法的callback参数,AccessibilityManagerService会将其封装为Client.</p>
+<p><img src="https://tva1.sinaimg.cn/large/006tNc79ly1fz558yimelj310s0bct9o.jpg" srcset="/img/loading.gif" alt="image-20190113184139607"></p>
+<h3 id="AccessibilityManager-sendAccessibilityEvent"><a href="#AccessibilityManager-sendAccessibilityEvent" class="headerlink" title="AccessibilityManager#sendAccessibilityEvent"></a>AccessibilityManager#sendAccessibilityEvent</h3><p>AccessibilityManager发送事件到远程服务AccessibilityManagerService,</p>
+<p>android.view.accessibility.AccessibilityManager#sendAccessibilityEvent</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+    <span class="hljs-keyword">final</span> IAccessibilityManager service;
+    <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> userId;
+    <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+        <span class="hljs-comment">// 1.首先获取到AccessibilityManagerService的本地代理对象</span>
+        service = getServiceLocked();
+        <span class="hljs-keyword">if</span> (service == <span class="hljs-keyword">null</span>) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+        <span class="hljs-comment">// 2.检查Accessibility是否启用</span>
+        <span class="hljs-keyword">if</span> (!mIsEnabled) &#123;
+            Looper myLooper = Looper.myLooper();
+            <span class="hljs-keyword">if</span> (myLooper == Looper.getMainLooper()) &#123;
+                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(
+                        <span class="hljs-string">"Accessibility off. Did you forget to check that?"</span>);
+            &#125; <span class="hljs-keyword">else</span> &#123;
+                <span class="hljs-keyword">return</span>;
+            &#125;
+        &#125;
+        <span class="hljs-keyword">if</span> ((event.getEventType() &amp; mRelevantEventTypes) == <span class="hljs-number">0</span>) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+        userId = mUserId;
+    &#125;
+    <span class="hljs-keyword">try</span> &#123;
+        <span class="hljs-comment">// 3.更新当前事件的时间</span>
+        event.setEventTime(SystemClock.uptimeMillis());
+        <span class="hljs-keyword">long</span> identityToken = Binder.clearCallingIdentity();
+        <span class="hljs-comment">// 4.最终调用了AccessibilityManagerService服务的</span>
+        <span class="hljs-comment">// sendAccessibilityEvent()方法将事件发送到AMS</span>
+        service.sendAccessibilityEvent(event, userId);
+        Binder.restoreCallingIdentity(identityToken);
+    &#125; <span class="hljs-keyword">catch</span> (RemoteException re) &#123;
+        Log.e(LOG_TAG, <span class="hljs-string">"Error during sending "</span> + event + <span class="hljs-string">" "</span>, re);
+    &#125; <span class="hljs-keyword">finally</span> &#123;
+        <span class="hljs-comment">//释放event对象,使其重新加入对象池以便重复利用</span>
+        event.recycle();
+    &#125;
+&#125;</code></pre>
+
+<p>在上述代码中,首先通过<code>getServiceLocked()</code>获取AccessibilityManagerService在本地的代理对象,即IAccessibilityManager的实例,其实现如下:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> IAccessibilityManager <span class="hljs-title">getServiceLocked</span><span class="hljs-params">()</span> </span>&#123;
+    <span class="hljs-keyword">if</span> (mService == <span class="hljs-keyword">null</span>) &#123;
+        tryConnectToServiceLocked(<span class="hljs-keyword">null</span>);
+    &#125;
+    <span class="hljs-keyword">return</span> mService;
+&#125;</code></pre>
+
+<p>在该方法中最终还是借助<code>tryConnectToServiceLocked()</code>来连接AccessibilityManagerService.该方法返回的mService即之前IAccessibilityManager类型实例,也就是AMS在本地的代理对象,其真正的操作在<code>AccessibilityManagerService.sendAccessibilityEvent()</code>中,直接来看其实现:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AccessibilityManagerService</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">IAccessibilityManager</span>.<span class="hljs-title">Stub</span> </span>&#123;
+    	
+    ...
+    
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sendAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event, <span class="hljs-keyword">int</span> userId)</span> </span>&#123;
+        <span class="hljs-keyword">boolean</span> dispatchEvent = <span class="hljs-keyword">false</span>;
+
+        <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+            <span class="hljs-keyword">if</span> (event.getWindowId() ==
+                AccessibilityWindowInfo.PICTURE_IN_PICTURE_ACTION_REPLACER_WINDOW_ID) &#123;
+                <span class="hljs-comment">// The replacer window isn't shown to services. Move its events into the pip.</span>
+                AccessibilityWindowInfo pip = mSecurityPolicy.getPictureInPictureWindow();
+                <span class="hljs-keyword">if</span> (pip != <span class="hljs-keyword">null</span>) &#123;
+                    <span class="hljs-keyword">int</span> pipId = pip.getId();
+                    event.setWindowId(pipId);
+                &#125;
+            &#125;
+
+            <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> resolvedUserId = mSecurityPolicy
+                    .resolveCallingUserIdEnforcingPermissionsLocked(userId);
+            <span class="hljs-comment">// This method does nothing for a background user.</span>
+            <span class="hljs-keyword">if</span> (resolvedUserId == mCurrentUserId) &#123;
+                <span class="hljs-keyword">if</span> (mSecurityPolicy.canDispatchAccessibilityEventLocked(event)) &#123;
+                    mSecurityPolicy.updateActiveAndAccessibilityFocusedWindowLocked(
+                            event.getWindowId(), event.getSourceNodeId(),
+                            event.getEventType(), event.getAction());
+                    mSecurityPolicy.updateEventSourceLocked(event);
+                    dispatchEvent = <span class="hljs-keyword">true</span>;
+                &#125;
+                <span class="hljs-keyword">if</span> (mHasInputFilter &amp;&amp; mInputFilter != <span class="hljs-keyword">null</span>) &#123;
+                    mMainHandler.obtainMessage(
+                            MainHandler.MSG_SEND_ACCESSIBILITY_EVENT_TO_INPUT_FILTER,
+                            AccessibilityEvent.obtain(event)).sendToTarget();
+                &#125;
+            &#125;
+        &#125;
+		<span class="hljs-comment">// 1.需要分发事件</span>
+        <span class="hljs-keyword">if</span> (dispatchEvent) &#123;
+            <span class="hljs-keyword">if</span> (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                    &amp;&amp; mWindowsForAccessibilityCallback != <span class="hljs-keyword">null</span>) &#123;
+                WindowManagerInternal wm = LocalServices.getService(WindowManagerInternal<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;
+                wm.computeWindowsForAccessibility();
+            &#125;
+            <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+                <span class="hljs-comment">// 2.通知对应的AccessibilityServices</span>
+                notifyAccessibilityServicesDelayedLocked(event, <span class="hljs-keyword">false</span>);
+                notifyAccessibilityServicesDelayedLocked(event, <span class="hljs-keyword">true</span>);
+            &#125;
+        &#125;
+
+        <span class="hljs-keyword">if</span> (OWN_PROCESS_ID != Binder.getCallingPid()) &#123;
+            event.recycle();
+        &#125;
+    &#125;
+    
+    ...
+&#125;</code></pre>
+
+<p>dispatchEvent为true表示需要向AccessibilityService分发事件,当需要进行事件分发时,最终会调用<code>notifyAccessibilityServicesDelayedLocked()</code>:</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">notifyAccessibilityServicesDelayedLocked</span><span class="hljs-params">(AccessibilityEvent event,</span></span>
+<span class="hljs-function"><span class="hljs-params">           <span class="hljs-keyword">boolean</span> isDefault)</span> </span>&#123;
+       <span class="hljs-keyword">try</span> &#123;
+           UserState state = getCurrentUserStateLocked();
+           <span class="hljs-comment">// mBoundServices保存了所有AccessibilityService与AMS的连接</span>
+           <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>, count = state.mBoundServices.size(); i &lt; count; i++) &#123;
+               Service service = state.mBoundServices.get(i);
+
+               <span class="hljs-keyword">if</span> (service.mIsDefault == isDefault) &#123;
+                   <span class="hljs-keyword">if</span> (doesServiceWantEventLocked(service, event)) &#123;
+                       service.notifyAccessibilityEvent(event, <span class="hljs-keyword">true</span>);
+                   &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (service.mUsesAccessibilityCache
+                           &amp;&amp; (AccessibilityCache.CACHE_CRITICAL_EVENTS_MASK
+                               &amp; event.getEventType()) != <span class="hljs-number">0</span>) &#123;
+                       service.notifyAccessibilityEvent(event, <span class="hljs-keyword">false</span>);
+                   &#125;
+               &#125;
+           &#125;
+       &#125; <span class="hljs-keyword">catch</span> (IndexOutOfBoundsException oobe) &#123;
+          
+       &#125;
+   &#125;</code></pre>
+
+<p>上述方法中的mBoundServices是AMS中的成员变量,定义如下:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> ArrayList&lt;AccessibilityServiceConnection&gt; mBoundServices = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();</code></pre>
+
+<p>其中AccessibilityServiceConnection代表已经注册到AMS的AccessibilityService,也就是说mBoundServices保存了所有AccessibilityService与AMS的连接.比如我们自定义了一个辅助服务WXAccessibilityService,当该服务被启用时,AMS就会与该服务进行绑定,并生成对应的AccessibilityServiceConnection保存在mBoundServices中.(AccessibilityServiceConnection继承自AbstractAccessibilityServiceConnection)</p>
+<p>在<code>notifyAccessibilityServicesDelayedLocked()</code>方法中会遍历所有的AccessibilityServiceConnection对象,并调用其<code>notifyAccessibilityEvent()</code>来通知事件发生变化:</p>
+<p><code>com.android.server.accessibility.AbstractAccessibilityServiceConnection#notifyAccessibilityEvent</code>:</p>
+<pre><code class="hljs java"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">notifyAccessibilityEvent</span><span class="hljs-params">(AccessibilityEvent event)</span> </span>&#123;
+     <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+         <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> eventType = event.getEventType();
+
+         <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> serviceWantsEvent = wantsEventLocked(event);
+         <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> requiredForCacheConsistency = mUsesAccessibilityCache
+                 &amp;&amp; ((AccessibilityCache.CACHE_CRITICAL_EVENTS_MASK &amp; eventType) != <span class="hljs-number">0</span>);
+         <span class="hljs-keyword">if</span> (!serviceWantsEvent &amp;&amp; !requiredForCacheConsistency) &#123;
+             <span class="hljs-keyword">return</span>;
+         &#125;
+
+         AccessibilityEvent newEvent = AccessibilityEvent.obtain(event);
+         <span class="hljs-comment">// 1.根据event创建Message对象,后续将通过Handler进行处理</span>
+         Message message;
+         <span class="hljs-keyword">if</span> ((mNotificationTimeout &gt; <span class="hljs-number">0</span>)
+                 &amp;&amp; (eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)) &#123;
+             <span class="hljs-comment">// Allow at most one pending event</span>
+             <span class="hljs-keyword">final</span> AccessibilityEvent oldEvent = mPendingEvents.get(eventType);
+             mPendingEvents.put(eventType, newEvent);
+             <span class="hljs-keyword">if</span> (oldEvent != <span class="hljs-keyword">null</span>) &#123;
+                 mEventDispatchHandler.removeMessages(eventType);
+                 oldEvent.recycle();
+             &#125;
+             message = mEventDispatchHandler.obtainMessage(eventType);
+         &#125; <span class="hljs-keyword">else</span> &#123;
+             <span class="hljs-comment">// Send all messages, bypassing mPendingEvents</span>
+             message = mEventDispatchHandler.obtainMessage(eventType, newEvent);
+         &#125;
+         message.arg1 = serviceWantsEvent ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>;
+<span class="hljs-comment">// 2.发送Message,最终将其切换到主线程中进行处理</span>
+         mEventDispatchHandler.sendMessageDelayed(message, mNotificationTimeout);
+     &#125;
+ &#125;</code></pre>
+
+<p>由于此处分发过程发生在Binder线程池,需要借助Handler将其切换到主线程中,即mEventDispatchHandler,简单来看该Handler的创建以及对Message的处理过程:</p>
+<pre><code class="hljs java"><span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AbstractAccessibilityServiceConnection</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">IAccessibilityServiceConnection</span>.<span class="hljs-title">Stub</span></span>
+<span class="hljs-class">        <span class="hljs-keyword">implements</span> <span class="hljs-title">ServiceConnection</span>, <span class="hljs-title">IBinder</span>.<span class="hljs-title">DeathRecipient</span>, <span class="hljs-title">KeyEventDispatcher</span>.<span class="hljs-title">KeyEventFilter</span>,</span>
+<span class="hljs-class">        <span class="hljs-title">FingerprintGestureDispatcher</span>.<span class="hljs-title">FingerprintGestureClient</span> </span>&#123;
+    
+    ......
+        
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">AbstractAccessibilityServiceConnection</span><span class="hljs-params">(Context context, ComponentName componentName,</span></span>
+<span class="hljs-function"><span class="hljs-params">            AccessibilityServiceInfo accessibilityServiceInfo, <span class="hljs-keyword">int</span> id, Handler mainHandler,</span></span>
+<span class="hljs-function"><span class="hljs-params">            Object lock, SecurityPolicy securityPolicy, SystemSupport systemSupport,</span></span>
+<span class="hljs-function"><span class="hljs-params">            WindowManagerInternal windowManagerInternal,</span></span>
+<span class="hljs-function"><span class="hljs-params">            GlobalActionPerformer globalActionPerfomer)</span> </span>&#123;
+  		......
+        <span class="hljs-comment">// 1.创建Handler,用于切换到主线程    </span>
+        mEventDispatchHandler = <span class="hljs-keyword">new</span> Handler(mainHandler.getLooper()) &#123;
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">handleMessage</span><span class="hljs-params">(Message message)</span> </span>&#123;
+                <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> eventType =  message.what;
+                AccessibilityEvent event = (AccessibilityEvent) message.obj;
+                <span class="hljs-keyword">boolean</span> serviceWantsEvent = message.arg1 != <span class="hljs-number">0</span>;
+                <span class="hljs-comment">// 2.事件处理</span>
+                notifyAccessibilityEventInternal(eventType, event, serviceWantsEvent);
+            &#125;
+        &#125;;
+       .......
+    &#125;  
+      
+   ......         
+&#125;</code></pre>
+
+<p>在handleMessage()中继续调用<code>notifyAccessibilityEventInternal()</code>来将事件分发给具体的AccessibilityService.</p>
+<pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">notifyAccessibilityEventInternal</span><span class="hljs-params">(</span></span>
+<span class="hljs-function"><span class="hljs-params">              <span class="hljs-keyword">int</span> eventType,</span></span>
+<span class="hljs-function"><span class="hljs-params">              AccessibilityEvent event,</span></span>
+<span class="hljs-function"><span class="hljs-params">              <span class="hljs-keyword">boolean</span> serviceWantsEvent)</span> </span>&#123;
+          IAccessibilityServiceClient listener;
+
+          <span class="hljs-keyword">synchronized</span> (mLock) &#123;
+              listener = mServiceInterface;
+
+              <span class="hljs-keyword">if</span> (listener == <span class="hljs-keyword">null</span>) &#123;
+                  <span class="hljs-keyword">return</span>;
+              &#125;
+		<span class="hljs-comment">// 1.根据eventType取出事件</span>
+              <span class="hljs-keyword">if</span> (event == <span class="hljs-keyword">null</span>) &#123;
+                  event = mPendingEvents.get(eventType);
+                  <span class="hljs-keyword">if</span> (event == <span class="hljs-keyword">null</span>) &#123;
+                      <span class="hljs-keyword">return</span>;
+                  &#125;
+                  mPendingEvents.remove(eventType);
+              &#125;
+              <span class="hljs-comment">// 2.进行权限检查,检查服务是否允许检索窗口内容</span>
+              <span class="hljs-keyword">if</span> (mSecurityPolicy.canRetrieveWindowContentLocked(<span class="hljs-keyword">this</span>)) &#123;
+                  event.setConnectionId(mId);
+              &#125; <span class="hljs-keyword">else</span> &#123;
+                  event.setSource((View) <span class="hljs-keyword">null</span>);
+              &#125;
+              event.setSealed(<span class="hljs-keyword">true</span>);
+          &#125;
+
+          <span class="hljs-keyword">try</span> &#123;
+              <span class="hljs-comment">// 3.回调服务服务中的onAccessibityEvent()方法</span>
+              listener.onAccessibilityEvent(event, serviceWantsEvent);
+              ...
+          &#125; <span class="hljs-keyword">catch</span> (RemoteException re) &#123;
+              Slog.e(LOG_TAG, <span class="hljs-string">"Error during sending "</span> + event + <span class="hljs-string">" to "</span> + listener, re);
+          &#125; <span class="hljs-keyword">finally</span> &#123;
+              event.recycle();
+          &#125;
+      &#125;</code></pre>
+
+<h2 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><p>当应用界面产生AccessibilityEvent需要被发送给辅助服务时,最终会调用ViewRootImpl中的<code>requestSendAccessibilityEvent()</code>,在该方法中最终通过AccessibilityManager跨进程调用AMS的<code>sendAccessibilityEvent()</code>方法将AccessibilityEvent传递到AMS中,AMS接受到该事件后遍历所有已经注册到系统的AccessibilityService,然后再次以跨进程的方式将AccessibilityEvent发送至自定义AccessibilityService所在进程.</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>相比于ActivityManagerService或者PackageManagerService而言,AccessibilityServiceManager总体设计和架构都比较简单,更能加深对Binder使用的理解,同时通过简单的源码梳理,能帮助大家更有效的学习和使用辅助服务.此文拟稿与18年初,终结于19年初,一方面是向老东家360致敬,另一方面也作为新起点的标记.</p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/technology/">technology</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/AccessibilityService/">AccessibilityService</a>
+                    
+                      <a class="hover-with-bg" href="/tags/ViewRootImpl/">ViewRootImpl</a>
+                    
+                      <a class="hover-with-bg" href="/tags/AccessibilityManagerService/">AccessibilityManagerService</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/06/20/OpenJDK%E7%B3%BB%E5%88%97(%E4%B8%80)_%E7%BC%96%E8%AF%91%E4%B8%8E%E8%B0%83%E8%AF%95/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OpenJDK系列(一):编译/调试与项目结构</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2017/09/12/%E4%BB%8E%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E7%B3%BB%E7%BB%9F%E5%88%B0Android%E6%98%BE%E7%A4%BA%E7%B3%BB%E7%BB%9F/">
+                        <span class="hidden-mobile">Android图形显示系统基本原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "深入Android辅助服务架构与设计&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="猫的故事里有我">
+  <meta name="author" content="lionoggo">
+  <meta name="keywords" content="">
+  <title>Floating Cat</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 100vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Floating Cat</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+          </div>
+
+          
+            <div class="scroll-down-bar">
+              <i class="iconfont icon-arrowdown"></i>
+            </div>
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-md">
+        <div class="py-5" id="board"
+          style=margin-top:0>
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/09/12/%E4%BB%8E%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E7%B3%BB%E7%BB%9F%E5%88%B0Android%E6%98%BE%E7%A4%BA%E7%B3%BB%E7%BB%9F/">Android图形显示系统基本原理</a>
+
+      <a href="/2017/09/12/%E4%BB%8E%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E7%B3%BB%E7%BB%9F%E5%88%B0Android%E6%98%BE%E7%A4%BA%E7%B3%BB%E7%BB%9F/" class="index-excerpt">
+        
+        
+          
+        
+        <div>计算机图形显示系统人眼与帧率要理解应用流程度,我们首先引入FPS这个概念.FPS是Frames Per Second,它描述的是GPU在一秒内能够渲染出静态画面的数量(一张静态图片称之为一帧),通俗点讲就是GPU每秒钟能画出多少画面.FPS是衡量GPU性能的一个重要指标,通常来说性能越强的显卡,一秒内能够渲染出静态画面的数量越多,给我们的视觉效果越好.
+解释完帧率之后,我们还要具备一点生物学的知识</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-09-12
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Android/">Android</a>
+            
+              <a href="/tags/inotify/">inotify</a>
+            
+              <a href="/tags/FileObserver/">FileObserver</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/05/12/TensorFlow%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0(%E4%B8%80)/">TensorFlow学习笔记(一)</a>
+
+      <a href="/2017/05/12/TensorFlow%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0(%E4%B8%80)/" class="index-excerpt">
+        
+        
+          
+        
+        <div>机器学习机器学习是人工智能的一个分支，也是用来实现人工只能的一种方法。简单来说，机器学习就是通过算法，使得机器能从大量历史数据中学习规律，从而对新的样本做智能识别或对未来做预测,与传统的使用特定指令集手写软件不同，我们使用大量数据和算法来“训练”机器，由此带来机器学习如何完成任务.从1980年代末期以来，机器学习的发展大致经历了两次浪潮：浅层学习（Shallow Learning）和深度学习（De</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-05-12
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Android/">Android</a>
+            
+              <a href="/tags/TensorFlow/">TensorFlow</a>
+            
+              <a href="/tags/AI/">AI</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/04/05/AsyncTask%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/">AsyncTask设计与实现</a>
+
+      <a href="/2017/04/05/AsyncTask%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/" class="index-excerpt">
+        
+        
+          
+        
+        <div>AsyncTask基础AsyncTask是Android系统提供的轻量级异步任务类.在Android 1.6之前,其内部是串行任务,Android1.6之后起修改为并行任务,由于并行任务会引入并发问题,因此 Android 3.0重新提供对串行任务提供了支持.之后,AsyncTask默认是串行任务,但可以通过方法executeOnExecutor()指定为并行任务.
+AysncTask是个抽象的泛</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-04-05
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Android/">Android</a>
+            
+              <a href="/tags/AsyncTask/">AsyncTask</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/02/28/%E4%BB%8EJVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E8%B0%88%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">从JVM内存模型到线程安全</a>
+
+      <a href="/2017/02/28/%E4%BB%8EJVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E8%B0%88%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" class="index-excerpt">
+        
+        
+          
+        
+        <div>存储器层次结构对于开发者来说,存储器的层次结构应该是非常熟悉的,大体如下:
+其中寄存器,L1,L2,L3都被封装在CPU芯片中,作为应用开发者而言我们很少去注意和使用它.之所以引入L1,L2,L3高速寄存器,其根本是为了解决访问运算器和内存速度不匹配.但缓存的引入也带来两个问题:
+
+缓存命中率:缓存的数据都是主存中数据的备份,如果指令所需要的数据恰好在缓存中,我们就说缓存命中,反之,需要从主存中获</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-02-28
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JVM/">JVM</a>
+            
+              <a href="/tags/JMM/">JMM</a>
+            
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">线程安全</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/02/22/%E4%B9%B1%E5%BA%8F%E6%89%A7%E8%A1%8C%E4%B8%8E%E6%8C%87%E4%BB%A4%E9%87%8D%E6%8E%92/">乱序执行与内存屏障</a>
+
+      <a href="/2017/02/22/%E4%B9%B1%E5%BA%8F%E6%89%A7%E8%A1%8C%E4%B8%8E%E6%8C%87%E4%BB%A4%E9%87%8D%E6%8E%92/" class="index-excerpt">
+        
+        
+          
+        
+        <div>今天准备来聊聊乱序执行技术和内存屏障.为了能让大多数人理解,这里省略了很多不影响理解的旁枝末节,但由于我个人水平有限,如果不妥之处,希望各位指正.
+顺执行技术在开始说乱序执行之前,得先把按序执行说一遍.在早期处理器中,处理器执行指令的顺序就是按照我们编写汇编代码的顺序执行的,换句话说此时处理器指令执行顺序和我们代码顺序一致,我们称之为按序执行(In Order Execution).我们以烧水泡茶</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-02-22
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/as-if-serial/">as-if-serial</a>
+            
+              <a href="/tags/Java/">Java</a>
+            
+              <a href="/tags/CPU/">CPU</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/02/08/%E6%9D%A5%E8%87%AAUnix:Linux%E7%9A%84%E7%BC%96%E7%A8%8B%E5%90%AF%E7%A4%BA%E5%BD%95/">来自Unix/Linux的编程启示录</a>
+
+      <a href="/2017/02/08/%E6%9D%A5%E8%87%AAUnix:Linux%E7%9A%84%E7%BC%96%E7%A8%8B%E5%90%AF%E7%A4%BA%E5%BD%95/" class="index-excerpt">
+        
+        
+          
+        
+        <div>在整个探究过程中,那些经典的著作再次让我获益匪浅:C和指针,C专家编程,深入理解计算机系统(原书第3版),Linux/Unix设计思想,Linux Shell脚本攻略.前两本书购于13年,断断续续的读了许久,这一次重读令人豁然开朗,其中许多不解之处在深入理解计算机系统一书得到答案,而后两本则是年前有幸读到.其中Linux/Unix设计思想不谈技术细节,却揭示了Linux/Unix隐含的指导思想,最</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-02-08
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Unix/">Unix</a>
+            
+              <a href="/tags/%E7%BC%96%E7%A8%8B/">编程</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2017/01/05/%E5%B9%B4%E8%BD%BB%E4%BA%BA%E8%B0%88%E7%8B%AC%E5%A4%84%E5%92%8C%E8%87%AA%E5%BE%8B/">年轻人谈独处和自律</a>
+
+      <a href="/2017/01/05/%E5%B9%B4%E8%BD%BB%E4%BA%BA%E8%B0%88%E7%8B%AC%E5%A4%84%E5%92%8C%E8%87%AA%E5%BE%8B/" class="index-excerpt">
+        
+        
+          
+        
+        <div>独处与自律独处所谓独处是自己与自己相处的过程,独处不是孤僻.它是一个自己妥协,堕落,进而思考求真,最终接受喜欢自己的过程.它并非我们传统认知中的与世隔绝,更偏重于内心与周围世界的相互独立,这种感觉就像是你看电影,但电影的主角又是你.
+独处可能是被动的,也可能是主动的.像我喜欢独自看书,学习,生活,很少主动与外界沟通,这就是主动独处.而同样作为北漂一族,下班之后,人生地不熟并没有太多的交际,因此而成</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2017-01-05
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/life/">life</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E8%87%AA%E5%BE%8B/">自律</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/12/31/%E7%8E%A9%E8%BD%AC%E6%B3%A8%E8%A7%A3%E4%B9%8B%E8%BF%9B%E9%98%B6%E7%AF%87/">玩转注解之进阶篇</a>
+
+      <a href="/2016/12/31/%E7%8E%A9%E8%BD%AC%E6%B3%A8%E8%A7%A3%E4%B9%8B%E8%BF%9B%E9%98%B6%E7%AF%87/" class="index-excerpt">
+        
+        
+          
+        
+        <div>编译时注解处理器什么是Android-apt我们知道APT是集成在javac当中的工具,这个Android-apt又是什么鬼呢? 对于从事Android开发的同学来说,ButterKnife这个开源工具可是非常熟悉.在使用该工具之前,你需要进行配置：
+compile 'com.jakewharton:butterknife:8.4.0'
+apt 'com.jakewharton:butterkni</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-12-31
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java/">Java</a>
+            
+              <a href="/tags/apt/">apt</a>
+            
+              <a href="/tags/annotationProcessor/">annotationProcessor</a>
+            
+              <a href="/tags/%E8%B0%83%E8%AF%95/">调试</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/12/25/%E7%8E%A9%E8%BD%AC%E6%B3%A8%E8%A7%A3%E4%B9%8B%E5%9F%BA%E7%A1%80%E7%AF%87/">玩转注解之基础篇</a>
+
+      <a href="/2016/12/25/%E7%8E%A9%E8%BD%AC%E6%B3%A8%E8%A7%A3%E4%B9%8B%E5%9F%BA%E7%A1%80%E7%AF%87/" class="index-excerpt">
+        
+        
+          
+        
+        <div>注解基础什么是元数据(metadata)元数据由metadata译来，所谓的元数据就是“关于数据的数据”,更通俗的说就是描述数据的数据，对数据及信息资源的描述性信息.比如说一个文本文件,有创建时间,创建人,文件大小等数据,这都可以理解为是元数据.
+在java中,元数据以标签的形式存在java代码中,它的存在并不影响程序代码的编译和执行，通常它被用来生成其它的文件或运行时知道被运行代码的描述信息。j</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-12-25
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java/">Java</a>
+            
+              <a href="/tags/%E6%B3%A8%E8%A7%A3/">注解</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2016/12/20/RegisterNatives%E4%BD%BF%E7%94%A8/">JNI开发之RegisterNatives</a>
+
+      <a href="/2016/12/20/RegisterNatives%E4%BD%BF%E7%94%A8/" class="index-excerpt">
+        
+        
+          
+        
+        <div>JNI开发流程相对比较固定,一般需要经过以下几步:
+
+定义Native方法
+生成.h头文件
+编写C/C++文件
+生成本地链接库
+
+这里简单的写一个例子来演示上述流程.
+JNI开发流程定义Native方法为了说明流程,我们直接在根目录中创建Hello.java:
+public class Hello &#123;
+    public native void say();
+
+    public s</div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2016-12-20
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/technology/">technology</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/JNI/">JNI</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+
+
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <a class="extend prev" rel="prev" href="/"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/3/"><i class="iconfont icon-arrowright"></i></a>
+    </span>
+  </nav>
+  
+  <script>
+    for (ele of document.getElementById("pagination").getElementsByTagName("a")) {
+      ele.href += '#board';
+    }
+  </script>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "it's better to burn out than to fade away&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/tororo.model.json"},"display":{"position":"right","width":75,"height":150},"mobile":{"show":true}});</script></body>
+</html>
