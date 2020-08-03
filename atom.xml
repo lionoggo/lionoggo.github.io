@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2020-08-02T15:56:55.610Z</updated>
+  <updated>2020-08-03T00:47:13.535Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -17,24 +17,22 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>Rust之包管理</title>
-    <link href="http://yoursite.com/2020/08/02/Rust%E4%B9%8B%E5%8C%85%E7%AE%A1%E7%90%86/"/>
-    <id>http://yoursite.com/2020/08/02/Rust之包管理/</id>
-    <published>2020-08-02T15:29:04.783Z</published>
-    <updated>2020-08-02T15:56:55.610Z</updated>
+    <title>Rust包管理</title>
+    <link href="http://yoursite.com/2020/06/04/Rust%E4%B9%8B%E5%8C%85%E7%AE%A1%E7%90%86/"/>
+    <id>http://yoursite.com/2020/06/04/Rust之包管理/</id>
+    <published>2020-06-04T13:47:57.000Z</published>
+    <updated>2020-08-03T00:47:13.535Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          &lt;h1 id=&quot;Rust包管理&quot;&gt;&lt;a href=&quot;#Rust包管理&quot; class=&quot;headerlink&quot; title=&quot;Rust包管理&quot;&gt;&lt;/a&gt;Rust包管理&lt;/h1&gt;&lt;p&gt;title: Rust包管理&lt;br&gt;date: 2020-06-04
-        
-      
+      Rust包管理机制,module,crate.
     
     </summary>
     
+      <category term="rust" scheme="http://yoursite.com/categories/rust/"/>
+    
+    
+      <category term="rust" scheme="http://yoursite.com/tags/rust/"/>
     
   </entry>
   
